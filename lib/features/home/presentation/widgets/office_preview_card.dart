@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
-import 'package:tuko_kadi_iebc_locator/features/home/presentation/models/office_preview.dart';
+import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
 
 class OfficePreviewCard extends StatelessWidget {
   const OfficePreviewCard({
@@ -9,7 +9,7 @@ class OfficePreviewCard extends StatelessWidget {
     required this.office,
   });
 
-  final OfficePreview office;
+  final Office office;
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +37,9 @@ class OfficePreviewCard extends StatelessWidget {
                     color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Text(
-                    office.eta,
+                    office.distanceLabel,
                     style: TextStyle(
                       color: colors.onPrimaryContainer,
                       fontWeight: FontWeight.w600,
@@ -64,7 +63,7 @@ class OfficePreviewCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    office.landmark,
+                    '${office.officeLocation} · ${office.landmark}',
                     style: TextStyle(color: colors.onSurfaceVariant),
                   ),
                 ),

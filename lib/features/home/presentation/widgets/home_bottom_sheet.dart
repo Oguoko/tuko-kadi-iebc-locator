@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:tuko_kadi_iebc_locator/features/home/presentation/models/office_preview.dart';
-import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office_preview_card.dart';
 
 class HomeBottomSheet extends StatelessWidget {
   const HomeBottomSheet({
     super.key,
-    required this.offices,
-    required this.scrollController,
+    required this.resultsCount,
+    required this.child,
   });
 
-  final List<OfficePreview> offices;
-  final ScrollController scrollController;
+  final int resultsCount;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +49,7 @@ class HomeBottomSheet extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${offices.length} results',
+                  '$resultsCount results',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -60,16 +58,7 @@ class HomeBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Expanded(
-            child: ListView.separated(
-              controller: scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 26),
-              itemBuilder: (BuildContext context, int index) =>
-                  OfficePreviewCard(office: offices[index]),
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemCount: offices.length,
-            ),
-          ),
+          Expanded(child: child),
         ],
       ),
     );
