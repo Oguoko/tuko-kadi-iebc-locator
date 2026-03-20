@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>IEBC Locator - Nearby Spots</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface": "#fcf9f8",
+              "surface-bright": "#fcf9f8",
+              "on-surface-variant": "#3f4945",
+              "inverse-on-surface": "#f3f0ef",
+              "primary-container": "#004d40",
+              "tertiary-fixed-dim": "#a6d700",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "outline-variant": "#bfc9c4",
+              "on-tertiary-fixed-variant": "#3a4d00",
+              "surface-container-low": "#f6f3f2",
+              "on-tertiary-container": "#94c000",
+              "on-error-container": "#93000a",
+              "background": "#fcf9f8",
+              "secondary-fixed-dim": "#c8c6c5",
+              "error": "#ba1a1a",
+              "tertiary": "#253200",
+              "secondary": "#5f5e5e",
+              "on-secondary-fixed-variant": "#474746",
+              "surface-tint": "#29695b",
+              "on-secondary-container": "#636262",
+              "on-tertiary": "#ffffff",
+              "primary": "#00342b",
+              "primary-fixed": "#afefdd",
+              "inverse-primary": "#94d3c1",
+              "surface-container-high": "#eae7e7",
+              "surface-dim": "#dcd9d9",
+              "outline": "#707975",
+              "on-primary-fixed": "#00201a",
+              "surface-container": "#f0eded",
+              "primary-fixed-dim": "#94d3c1",
+              "on-secondary-fixed": "#1b1c1c",
+              "on-primary": "#ffffff",
+              "secondary-fixed": "#e5e2e1",
+              "on-primary-container": "#7ebdac",
+              "inverse-surface": "#303030",
+              "on-surface": "#1b1c1c",
+              "tertiary-fixed": "#bef500",
+              "tertiary-container": "#374a00",
+              "secondary-container": "#e2dfde",
+              "on-tertiary-fixed": "#151f00",
+              "on-background": "#1b1c1c",
+              "surface-container-highest": "#e5e2e1",
+              "on-primary-fixed-variant": "#065043",
+              "surface-variant": "#e5e2e1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fcf9f8] dark:bg-[#1b1c1c]">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-200 hover:bg-[#f6f3f2] dark:hover:bg-[#252626] p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined text-[#004d40] dark:text-[#bef500]">menu</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-extrabold text-xl tracking-tight text-[#004d40] dark:text-[#bef500]">IEBC Locator</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden active:scale-95 duration-200 cursor-pointer">
+<img alt="User Profile" data-alt="Close up portrait of a smiling young person" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBemg2JhfQb6ujjHhjiRw8x-yrdOh4hJCj89ai6_SckK3Vano7ILzbRnFQGeF_cCJT7REYXWhB6i_noCsA60KvQ0DBMuTn8bx98Zgx-NKZH1TNQqlrRsFOZSV_Vb71bcSkWfnusptJUyfvoh7MR4IrB1XMSxusmy8DC-V6yzadTeMedLFUC_rQxLvDsqjP0PyUFejuIXctik-BFykBumaeX0DTSTh_lnXcbcqKkjvswY3Aq6YGm8NddUpVV4f-MLzJ_zNCXPRq068lN"/>
+</div>
+</div>
+</header>
+<main class="pt-16 pb-24 min-h-screen flex flex-col">
+<!-- Map Section (Split Top) -->
+<section class="h-[353px] w-full relative overflow-hidden">
+<div class="absolute inset-0 bg-surface-container-high">
+<img alt="Map View" class="w-full h-full object-cover grayscale contrast-125 opacity-40" data-alt="Stylized minimalist city map of Nairobi Kenya" data-location="Nairobi" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQm7iM8HVpiv7NK4MnKbPeZQutAgh6JEiKoIDrGk2cXJ0CzT4VhHgl5LVMP3yypauC_yY1TGuvZDbnXMjgDZw7-5Pr8pwKLIcGI6hWKz0v7VaVHohVpVfh07wI_g1HGuHw3OkgpHcBzL6iOX3N_60bTqgxQJjyXaK2HsDEmI1cAUxHkInwAZOo-tkzOVZcuBowatEoLg646uNeYXNMCsfaQ3HgJte5tnG_quLzFRFLBhIk8Y84OTTMHK16xTaw4aIo5tBo2Jzu0lkE"/>
+</div>
+<!-- Map Markers -->
+<div class="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2">
+<div class="bg-primary text-white p-3 rounded-full shadow-lg flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+<div class="absolute top-1/4 right-1/4">
+<div class="bg-tertiary-fixed text-on-tertiary-fixed p-2 rounded-full shadow-md flex items-center justify-center">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+</div>
+<!-- Gradient Overlay for Bottom Sheet Blend -->
+<div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-surface to-transparent"></div>
+</section>
+<!-- Discovery Content (Bottom Sheet Style) -->
+<section class="flex-1 bg-surface -mt-8 relative z-10 rounded-t-[2.5rem] px-6 pt-8">
+<div class="w-12 h-1.5 bg-surface-container-highest rounded-full mx-auto mb-8"></div>
+<div class="flex flex-col gap-6">
+<!-- Header & Category Chips -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline font-extrabold text-2xl tracking-tight text-on-surface">Nearby Vibes</h2>
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-full bg-tertiary text-on-tertiary font-medium transition-all active:scale-95 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">restaurant</span>
+<span>Eats</span>
+</button>
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-full bg-surface-container-highest text-on-surface-variant font-medium hover:bg-surface-container-high transition-all active:scale-95 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">local_cafe</span>
+<span>Café</span>
+</button>
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-full bg-surface-container-highest text-on-surface-variant font-medium hover:bg-surface-container-high transition-all active:scale-95 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">park</span>
+<span>Chill</span>
+</button>
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-full bg-surface-container-highest text-on-surface-variant font-medium hover:bg-surface-container-high transition-all active:scale-95 whitespace-nowrap">
+<span class="material-symbols-outlined text-lg">nightlife</span>
+<span>Clubs</span>
+</button>
+</div>
+</div>
+<!-- Cards Grid -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Card 1 -->
+<div class="group bg-surface-container-lowest rounded-lg p-4 flex gap-4 transition-all hover:shadow-xl hover:translate-y-[-2px]">
+<div class="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Restaurant Interior" class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Modern aesthetic restaurant interior with warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMyykZfu9tXw4MoKhtlleATzxWtIXsItlFv7vvklVQOohdd6VBFMsp7Gh-ybufifQn1R0CbrgDQtlABlAdCOkcO-38EaJIzavE7OezSVgTq55R0hyYaqALcPb-8nWdk_ds1YzcByCr1ZqfC2_nIEruwkqstq4Rd5Ah-TFLlV0LIbRVTZOCeI_F06EKtNhq5Fg3t_E9c6TIb0ItfKDWLvS2qB4aAFqv4xAix1v9xOq4A34BNK41Azs_gMSexfKQT0L-eqkmG_35Kyak"/>
+</div>
+<div class="flex flex-col flex-1 justify-between py-1">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-bold text-lg text-on-surface leading-tight">Mama Ashanti</h3>
+<div class="flex items-center gap-1 bg-tertiary-fixed px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[11px] font-bold text-on-tertiary-fixed">4.5</span>
+</div>
+</div>
+<p class="text-secondary text-sm font-medium mt-1">Eatery • 500m</p>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-tertiary font-bold text-xs">OPEN NOW</span>
+<button class="flex items-center gap-1 bg-primary px-4 py-2 rounded-full text-white text-xs font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">directions</span>
+                                    Open in Maps
+                                </button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-surface-container-lowest rounded-lg p-4 flex gap-4 transition-all hover:shadow-xl hover:translate-y-[-2px]">
+<div class="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Cafe Scene" class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Minimalist coffee shop with large windows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhh4njxKpgaskX72nsxjVB6ix3m9J0IMkxBTsW1Nu3k7tQxTEw-0SI4BBnE7kOMNrYHbpH4ZmhHwOmEH7BWv1-ljFIg2hs0Mf2uQDuWUn9oCFN589q2dwzGlF4eXb1sgEHDMkhbq04p22Lxdz5JXEyXTcn9bQ5uQ7IXwQ9UCvtpkay4YOdemXbVSZimvhO9G0nGe_KxLpAHTa7S50nTlFDt-pjdc2gltsqJKeTjyNJgh7rVCzN2mqc6rJMDlV9boUcx8vRbrSFq0t6"/>
+</div>
+<div class="flex flex-col flex-1 justify-between py-1">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-bold text-lg text-on-surface leading-tight">Artcaffé Market</h3>
+<div class="flex items-center gap-1 bg-tertiary-fixed px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[11px] font-bold text-on-tertiary-fixed">4.8</span>
+</div>
+</div>
+<p class="text-secondary text-sm font-medium mt-1">Café • 1.2km</p>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-secondary font-bold text-xs uppercase opacity-60">Closing Soon</span>
+<button class="flex items-center gap-1 bg-primary px-4 py-2 rounded-full text-white text-xs font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">directions</span>
+                                    Open in Maps
+                                </button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group bg-surface-container-lowest rounded-lg p-4 flex gap-4 transition-all hover:shadow-xl hover:translate-y-[-2px]">
+<div class="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 bg-surface-container">
+<img alt="Park or Chill area" class="w-full h-full object-cover transition-transform group-hover:scale-110" data-alt="Green lush urban park with walking paths" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJDomqiFE62nk6GOZxSMEQImgfNm5Z3e03BjTw_tKNXnX6kCBxOtt5xplwsO3sVgxPlx1x8CpBz5UX_2Q5qX6G_9d-_lZip9PM-CcR6i8Hz6obD6AcZnorM1erlulA2Hx32ZKNzcTq-NahffxzIE3b-MZCI0brM1eWwahfoS-M4KQVd7AiePwWBAOWH1vxw0BQNWGzXl986lsymGPotZkqJHky2rWMl0xBDVtqJjdFrpZ4fnW4ZNkMFo6ZqUgIjNoCgGo1BC6LC8vt"/>
+</div>
+<div class="flex flex-col flex-1 justify-between py-1">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-bold text-lg text-on-surface leading-tight">Jeevanjee Gardens</h3>
+<div class="flex items-center gap-1 bg-tertiary-fixed px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[11px] font-bold text-on-tertiary-fixed">4.2</span>
+</div>
+</div>
+<p class="text-secondary text-sm font-medium mt-1">Chill • 800m</p>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-tertiary font-bold text-xs">OPEN NOW</span>
+<button class="flex items-center gap-1 bg-primary px-4 py-2 rounded-full text-white text-xs font-bold active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">directions</span>
+                                    Open in Maps
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 bg-[#fcf9f8]/70 dark:bg-[#1b1c1c]/70 backdrop-blur-xl border-t border-[#1b1c1c]/10 dark:border-[#ffffff]/10 rounded-t-[32px] z-50 shadow-[0_-4px_32px_rgba(27,28,28,0.06)] flex justify-around items-center px-4 pb-2">
+<a class="flex flex-col items-center justify-center text-[#004d40] dark:text-[#bef500] bg-[#004d40] dark:bg-[#bef500] text-white dark:text-[#253200] rounded-full px-5 py-2 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface": "#fcf9f8",
+              "surface-bright": "#fcf9f8",
+              "on-surface-variant": "#3f4945",
+              "inverse-on-surface": "#f3f0ef",
+              "primary-container": "#004d40",
+              "tertiary-fixed-dim": "#a6d700",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "outline-variant": "#bfc9c4",
+              "on-tertiary-fixed-variant": "#3a4d00",
+              "surface-container-low": "#f6f3f2",
+              "on-tertiary-container": "#94c000",
+              "on-error-container": "#93000a",
+              "background": "#fcf9f8",
+              "secondary-fixed-dim": "#c8c6c5",
+              "error": "#ba1a1a",
+              "tertiary": "#253200",
+              "secondary": "#5f5e5e",
+              "on-secondary-fixed-variant": "#474746",
+              "surface-tint": "#29695b",
+              "on-secondary-container": "#636262",
+              "on-tertiary": "#ffffff",
+              "primary": "#00342b",
+              "primary-fixed": "#afefdd",
+              "inverse-primary": "#94d3c1",
+              "surface-container-high": "#eae7e7",
+              "surface-dim": "#dcd9d9",
+              "outline": "#707975",
+              "on-primary-fixed": "#00201a",
+              "surface-container": "#f0eded",
+              "primary-fixed-dim": "#94d3c1",
+              "on-secondary-fixed": "#1b1c1c",
+              "on-primary": "#ffffff",
+              "secondary-fixed": "#e5e2e1",
+              "on-primary-container": "#7ebdac",
+              "inverse-surface": "#303030",
+              "on-surface": "#1b1c1c",
+              "tertiary-fixed": "#bef500",
+              "tertiary-container": "#374a00",
+              "secondary-container": "#e2dfde",
+              "on-tertiary-fixed": "#151f00",
+              "on-background": "#1b1c1c",
+              "surface-container-highest": "#e5e2e1",
+              "on-primary-fixed-variant": "#065043",
+              "surface-variant": "#e5e2e1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(24px);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface selection:bg-tertiary-fixed selection:text-tertiary">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#fcf9f8] dark:bg-[#1b1c1c]">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-screen-xl mx-auto">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#f6f3f2] transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#004d40]">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#004d40]">Westlands Constituency Office</h1>
+<div class="w-10 h-10 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar silhouette" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGXXhWPaVyS6yWLMh6HKD3Gkk_orVF6QgbR8h-RNPjKTqmGrBykpt9ONToiOtvPeuWGvDONgpB22tKpbp_dM06FhtVxSHo6nEyEBUFThBAE6F-FUdRjarRaTFKTpPOgqhjtdTyGyBgoy67hX6KmrqU_PE6Ca2aXaNlOBAxGNWtwV-g2bd0-pQ0GCpleyX9bq_2n8bTrQUsh8d726MfXva4W_f5JmWQnHxI7WIhnrkBwKU_rjbK0ubH4bvHT74vSMua1STDxLus0Y16"/>
+</div>
+</div>
+</nav>
+<main class="pt-20 pb-28 px-4 max-w-screen-md mx-auto space-y-8">
+<!-- Hero Information Section -->
+<section class="space-y-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-tertiary-container bg-tertiary-fixed px-3 py-1 rounded-full w-fit">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="font-label text-xs font-bold tracking-tight">OFFICIAL IEBC HUB</span>
+</div>
+<h2 class="font-headline text-3xl font-extrabold tracking-tight text-primary">Nairobi County</h2>
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-lg">location_on</span>
+<p class="font-body text-md font-medium">Near Sarit Centre, Westlands</p>
+</div>
+</div>
+<!-- Interactive Map Preview (Bento-style card) -->
+<div class="relative h-64 w-full rounded-lg overflow-hidden bg-surface-container-high group cursor-pointer shadow-sm">
+<img class="w-full h-full object-cover grayscale-[0.2] transition-transform duration-500 group-hover:scale-105" data-alt="Simplified city map showing Westlands Nairobi street grid" data-location="Nairobi" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCftUZMijp3Qhz2uuUTRlV92arZXeTUFa_o0ixdkaHFYIq0-n2bHctq-DkmNegQxzukBLSGsBPamgxX7T_hW4W64Mz0zYtD_LMJ8pD79WBj2f1y_8ZitTC_NuXBfRRWtBk0Nxh-c573w7230Paan6IKbvTZoXJINP1Y5a8OipF-keOJSNnc4VDKYm30Pm2A7j203JY1Z9hlamLPg-dZMOzogxFR9IDitOrjMlGFGnI5MMn6AScZyGZPDV-WE2gtZoPc1LS2YRIDeOsd"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
+<div class="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+<div class="glass-card px-4 py-2 rounded-full border border-white/20">
+<span class="text-xs font-bold text-primary flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></span>
+                            Live Traffic: Low
+                        </span>
+</div>
+<div class="bg-primary-container text-white p-3 rounded-full shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">directions</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Primary Actions -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-3 bg-primary text-on-primary py-4 px-6 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all md:col-span-2">
+<span class="material-symbols-outlined">map</span>
+                Get Directions
+            </button>
+<button class="flex items-center justify-center gap-3 bg-secondary-container text-on-secondary-container py-4 px-6 rounded-full font-semibold active:scale-95 transition-all">
+<span class="material-symbols-outlined">call</span>
+                Call Office
+            </button>
+<button class="flex items-center justify-center gap-3 bg-secondary-container text-on-secondary-container py-4 px-6 rounded-full font-semibold active:scale-95 transition-all">
+<span class="material-symbols-outlined">share</span>
+                Share Location
+            </button>
+</section>
+<!-- "What to carry" Checklist Section -->
+<section class="bg-surface-container-low p-6 rounded-lg space-y-4">
+<h3 class="font-headline text-xl font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-container">fact_check</span>
+                What to carry
+            </h3>
+<div class="grid grid-cols-1 gap-3">
+<div class="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-lg">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">badge</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">National ID Card</p>
+<p class="text-xs text-secondary">Original document required</p>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-lg">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">description</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Proof of Residence</p>
+<p class="text-xs text-secondary">Utility bill or rent agreement</p>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-lowest p-4 rounded-lg">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">ink_pen</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Personal Pen</p>
+<p class="text-xs text-secondary">Recommended for hygiene</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Nearby Spots Horizontal Scroll -->
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline text-xl font-bold text-primary">Nearby Spots</h3>
+<button class="text-tertiary font-bold text-sm">View Map</button>
+</div>
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4 snap-x">
+<!-- Card 1: Eateries -->
+<div class="snap-start flex-none w-64 bg-surface-container-lowest rounded-lg overflow-hidden shadow-sm">
+<div class="h-32 relative">
+<img class="w-full h-full object-cover" data-alt="High-end modern restaurant interior in Nairobi" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHQogAogoZviUR84u4EPkC1rp-1kdru5ImptzFaBMiQLSYv6fzzahTelbVT2evyD7wN_GstW-wl8AwlBxs_0dAdLSwaAxOKw_o9TK1yzQBCK7AL_FGfbjL6voGANBOQ5KrPo8D8a_8EY6KAYl-sBDsY-8iaddzYEVI7IvL2fWdgGos3-FqSiQFthcXyKRPNMXJmK5dL7e4IKXYILje0jExbGcPBOo0irsGVeySJEj5hXudj1MrhvHqOMXLVVrzW9cYJ3zwqXNao80x"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-orange-500" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[10px] font-bold">4.8</span>
+</div>
+</div>
+<div class="p-3">
+<h4 class="font-bold text-sm">The Local Grill</h4>
+<p class="text-xs text-secondary">Eateries • 2 mins walk</p>
+</div>
+</div>
+<!-- Card 2: Cafés -->
+<div class="snap-start flex-none w-64 bg-surface-container-lowest rounded-lg overflow-hidden shadow-sm">
+<div class="h-32 relative">
+<img class="w-full h-full object-cover" data-alt="Cozy coffee shop counter with pastries" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1t1RvX75pr2tpKSSNobnoGVW7nXGF9RH9m1hDqQleO1rK3ZFRMvQURV0YfSsonzv-WkjvEQHkLWEA-ByQui7H3gm5stLsSKXeVImoB4dVfAnLRhdIv0F86rPjax37DyNzWnUcpU8x5-96vQMEi41xJacLeX4KvtnaM4wWkFgXoEI1NSKEbMy8V-7dSoY7R8XXLrAecsFGEWd7eWfYBt6lffkVYgPiTS6ie6jY53Y6Kq36QMkKbGzZ7cC8rZl6z6Ybw-Db4jTPkTRO"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-orange-500" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[10px] font-bold">4.5</span>
+</div>
+</div>
+<div class="p-3">
+<h4 class="font-bold text-sm">Java House Sarit</h4>
+<p class="text-xs text-secondary">Cafés • 5 mins walk</p>
+</div>
+</div>
+<!-- Card 3: Chill Places -->
+<div class="snap-start flex-none w-64 bg-surface-container-lowest rounded-lg overflow-hidden shadow-sm">
+<div class="h-32 relative">
+<img class="w-full h-full object-cover" data-alt="Modern hotel lobby lounge with greenery" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8KV3nxnn70Xamz6zOkmPctf3rk1BrnZf4zfW_1jqGucwVOHFOaqVbL8aHyTBlcsZR7CzbNjcSyAyLql1NOrNcbIbqsaTQWkXj8pWV-CyAnvpZeTnBD4HWTFgT1hxKNdfsHZ2v8zdu5l2lXYsOZAb492puDa-g93PSr7sn2W8JaqsB7FI80rJ9_5geYYRnWzoBfnr-mRJsT7AhQdAG276h5afCVIN9iDg6uApX7mdyng05iMwt4Z2PvX1uyqSKmhvz-UzNzWi7_RTu"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-full flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-orange-500" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-[10px] font-bold">4.9</span>
+</div>
+</div>
+<div class="p-3">
+<h4 class="font-bold text-sm">Karura Forest Edge</h4>
+<p class="text-xs text-secondary">Chill Places • 10 mins drive</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full rounded-t-[32px] z-50 bg-[#fcf9f8]/70 backdrop-blur-xl border-t border-[#1b1c1c]/10 shadow-[0_-4px_32px_rgba(27,28,28,0.06)]">
+<div class="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-4 pb-2">
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#004d40] text-white rounded-full px-5 py-2 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

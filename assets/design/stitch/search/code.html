@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Search - IEBC Locator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface": "#fcf9f8",
+              "surface-bright": "#fcf9f8",
+              "on-surface-variant": "#3f4945",
+              "inverse-on-surface": "#f3f0ef",
+              "primary-container": "#004d40",
+              "tertiary-fixed-dim": "#a6d700",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "outline-variant": "#bfc9c4",
+              "on-tertiary-fixed-variant": "#3a4d00",
+              "surface-container-low": "#f6f3f2",
+              "on-tertiary-container": "#94c000",
+              "on-error-container": "#93000a",
+              "background": "#fcf9f8",
+              "secondary-fixed-dim": "#c8c6c5",
+              "error": "#ba1a1a",
+              "tertiary": "#253200",
+              "secondary": "#5f5e5e",
+              "on-secondary-fixed-variant": "#474746",
+              "surface-tint": "#29695b",
+              "on-secondary-container": "#636262",
+              "on-tertiary": "#ffffff",
+              "primary": "#00342b",
+              "primary-fixed": "#afefdd",
+              "inverse-primary": "#94d3c1",
+              "surface-container-high": "#eae7e7",
+              "surface-dim": "#dcd9d9",
+              "outline": "#707975",
+              "on-primary-fixed": "#00201a",
+              "surface-container": "#f0eded",
+              "primary-fixed-dim": "#94d3c1",
+              "on-secondary-fixed": "#1b1c1c",
+              "on-primary": "#ffffff",
+              "secondary-fixed": "#e5e2e1",
+              "on-primary-container": "#7ebdac",
+              "inverse-surface": "#303030",
+              "on-surface": "#1b1c1c",
+              "tertiary-fixed": "#bef500",
+              "tertiary-container": "#374a00",
+              "secondary-container": "#e2dfde",
+              "on-tertiary-fixed": "#151f00",
+              "on-background": "#1b1c1c",
+              "surface-container-highest": "#e5e2e1",
+              "on-primary-fixed-variant": "#065043",
+              "surface-variant": "#e5e2e1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .hide-scrollbar::-webkit-scrollbar { display: none; }
+      .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fcf9f8] dark:bg-[#1b1c1c]">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-[#f6f3f2] dark:hover:bg-[#252626] transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#004d40] dark:text-[#bef500]">menu</span>
+</button>
+<h1 class="text-[#004d40] dark:text-[#bef500] font-['Plus_Jakarta_Sans'] font-extrabold tracking-tight text-xl">IEBC Locator</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1S5oYJVbU6DA86d6o_MiQ-3qTRqWmkf9-aAgDU4j6NPjwL33m7ae930Ctxpx0swY3hEeaHletYxPOW8CKk8PXn_XuoROp6XXM9sFKOFx0SgQruTsNg_Ig3kuZmie6mHyJ64gdJEQ_RiNl9QHuvXhSm4xh7yLuCg_XA4fq0pLgPsDHU9gkvoJNR3pZErlO3YxT5EgmyLg0FHC5emHDHgUd51G9vcSqWPnhFlLdMvGLC5zci-h-U959t8HivPb0-Qtkt57YGd3Nhk6H"/>
+</div>
+</div>
+</header>
+<main class="pt-20 px-6 max-w-screen-xl mx-auto space-y-8">
+<!-- Search Bar Section -->
+<section class="mt-4">
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full h-16 pl-14 pr-6 bg-surface-container-high border-none rounded-lg text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/40 transition-all font-medium" placeholder="Search by constituency, county, or office" type="text"/>
+</div>
+</section>
+<!-- Suggested (Chips) Section -->
+<section class="space-y-4">
+<h2 class="font-headline font-bold text-lg text-on-surface ml-1">Suggested</h2>
+<div class="flex flex-wrap gap-3">
+<button class="px-6 py-2.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-semibold text-sm hover:opacity-80 active:scale-95 transition-all">
+                    Kibra
+                </button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-highest text-on-surface font-semibold text-sm hover:opacity-80 active:scale-95 transition-all">
+                    Westlands
+                </button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-highest text-on-surface font-semibold text-sm hover:opacity-80 active:scale-95 transition-all">
+                    Mombasa CBD
+                </button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-highest text-on-surface font-semibold text-sm hover:opacity-80 active:scale-95 transition-all">
+                    Kisumu Central
+                </button>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Recent Searches -->
+<section class="lg:col-span-4 space-y-4">
+<div class="flex items-center justify-between px-1">
+<h2 class="font-headline font-bold text-lg text-on-surface">Recent Searches</h2>
+<button class="text-primary text-xs font-bold uppercase tracking-wider">Clear All</button>
+</div>
+<div class="bg-surface-container-low rounded-lg p-2 space-y-1">
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-highest rounded-md transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">history</span>
+<span class="font-medium text-sm">Lang'ata Ward</span>
+</div>
+<span class="material-symbols-outlined text-outline text-sm">close</span>
+</div>
+<div class="flex items-center justify-between p-4 hover:bg-surface-container-highest rounded-md transition-colors cursor-pointer group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">history</span>
+<span class="font-medium text-sm">Nakuru Town East</span>
+</div>
+<span class="material-symbols-outlined text-outline text-sm">close</span>
+</div>
+</div>
+</section>
+<!-- Search Results -->
+<section class="lg:col-span-8 space-y-4">
+<h2 class="font-headline font-bold text-lg text-on-surface ml-1">Search Results</h2>
+<div class="space-y-4">
+<!-- Result Card 1 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg flex items-center justify-between transition-all hover:translate-x-1 border border-outline-variant/10">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Dagoretti North</h3>
+<p class="text-secondary text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">map</span>
+                                    Nairobi County
+                                </p>
+</div>
+</div>
+<button class="w-12 h-12 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container hover:text-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Result Card 2 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg flex items-center justify-between transition-all hover:translate-x-1 border border-outline-variant/10">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Eldoret East</h3>
+<p class="text-secondary text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">map</span>
+                                    Uasin Gishu County
+                                </p>
+</div>
+</div>
+<button class="w-12 h-12 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container hover:text-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Result Card 3 -->
+<div class="bg-surface-container-lowest p-6 rounded-lg flex items-center justify-between transition-all hover:translate-x-1 border border-outline-variant/10">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">Kisauni</h3>
+<p class="text-secondary text-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">map</span>
+                                    Mombasa County
+                                </p>
+</div>
+</div>
+<button class="w-12 h-12 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container hover:text-white transition-all">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-4 pb-2 bg-[#fcf9f8]/70 dark:bg-[#1b1c1c]/70 backdrop-blur-xl rounded-t-[32px] z-50 shadow-[0_-4px_32px_rgba(27,28,28,0.06)] border-t border-[#1b1c1c]/10 dark:border-[#ffffff]/10">
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#004d40] dark:bg-[#bef500] text-white dark:text-[#253200] rounded-full px-5 py-2 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Saved - IEBC Locator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface": "#fcf9f8",
+              "surface-bright": "#fcf9f8",
+              "on-surface-variant": "#3f4945",
+              "inverse-on-surface": "#f3f0ef",
+              "primary-container": "#004d40",
+              "tertiary-fixed-dim": "#a6d700",
+              "on-error": "#ffffff",
+              "error-container": "#ffdad6",
+              "outline-variant": "#bfc9c4",
+              "on-tertiary-fixed-variant": "#3a4d00",
+              "surface-container-low": "#f6f3f2",
+              "on-tertiary-container": "#94c000",
+              "on-error-container": "#93000a",
+              "background": "#fcf9f8",
+              "secondary-fixed-dim": "#c8c6c5",
+              "error": "#ba1a1a",
+              "tertiary": "#253200",
+              "secondary": "#5f5e5e",
+              "on-secondary-fixed-variant": "#474746",
+              "surface-tint": "#29695b",
+              "on-secondary-container": "#636262",
+              "on-tertiary": "#ffffff",
+              "primary": "#00342b",
+              "primary-fixed": "#afefdd",
+              "inverse-primary": "#94d3c1",
+              "surface-container-high": "#eae7e7",
+              "surface-dim": "#dcd9d9",
+              "outline": "#707975",
+              "on-primary-fixed": "#00201a",
+              "surface-container": "#f0eded",
+              "primary-fixed-dim": "#94d3c1",
+              "on-secondary-fixed": "#1b1c1c",
+              "on-primary": "#ffffff",
+              "secondary-fixed": "#e5e2e1",
+              "on-primary-container": "#7ebdac",
+              "inverse-surface": "#303030",
+              "on-surface": "#1b1c1c",
+              "tertiary-fixed": "#bef500",
+              "tertiary-container": "#374a00",
+              "secondary-container": "#e2dfde",
+              "on-tertiary-fixed": "#151f00",
+              "on-background": "#1b1c1c",
+              "surface-container-highest": "#e5e2e1",
+              "on-primary-fixed-variant": "#065043",
+              "surface-variant": "#e5e2e1"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-tertiary-fixed selection:text-on-tertiary-fixed">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fcf9f8] dark:bg-[#1b1c1c]">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#004d40] dark:text-[#bef500] hover:bg-[#f6f3f2] dark:hover:bg-[#252626] transition-colors p-2 rounded-full active:scale-95 duration-200">
+                    menu
+                </button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold text-xl text-[#004d40] dark:text-[#bef500] tracking-tight">IEBC Locator</h1>
+</div>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container active:scale-95 duration-200 transition-transform">
+<img alt="User profile avatar" data-alt="Portrait of a young Kenyan man smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnkU3OWKJmVB5bpKw3WkIy47j3BSNaqVkgLPAjxLgYKedgSnM5KRv4zFT8WNvcicSLChsBevM54NJGVkMZs5ZxUvKNd00iU4BL3VJeGjhhQAxOz2_mSoblK4-GgxROL3PFMBdEEgdjy8WfzQUr5c-qQlCtkgipwCU5JHYzDV4j--JvzhJgpu0tg1qrfy7ZFTXJzssDluBXVxDhxpP-xd1ga4FGrVRUs2nGXRSKkwUcg5F590ovH-hNqELidYCMsMg72ly1zATlsg2q"/>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-28 px-6 max-w-screen-xl mx-auto">
+<!-- Screen Title & Narrative -->
+<div class="mb-8">
+<h2 class="font-headline text-3xl font-extrabold text-primary mb-2 tracking-tight">Saved Essentials</h2>
+<p class="text-on-surface-variant font-body text-sm max-w-xs">Access your pinned polling stations and registration spots instantly.</p>
+</div>
+<!-- Segmented Tabs (Asymmetric Gen-Z Style) -->
+<div class="flex gap-2 mb-8 bg-surface-container-low p-1.5 rounded-2xl w-fit">
+<button class="px-8 py-3 rounded-xl bg-primary text-on-primary font-semibold text-sm transition-all shadow-sm">
+                Offices
+            </button>
+<button class="px-8 py-3 rounded-xl text-secondary hover:bg-surface-container-high font-semibold text-sm transition-all">
+                Spots
+            </button>
+</div>
+<!-- Recently Viewed (Editorial Fluidity) -->
+<section class="mb-10">
+<div class="flex justify-between items-end mb-4 px-2">
+<h3 class="font-headline text-xl font-bold text-primary">Recently Viewed</h3>
+<span class="text-label-sm font-medium text-tertiary bg-tertiary-fixed px-3 py-1 rounded-full">New activity</span>
+</div>
+<div class="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-6 px-6">
+<!-- Recent Card 1 -->
+<div class="min-w-[200px] bg-surface-container-lowest rounded-lg p-4 flex flex-col gap-3 group active:scale-95 transition-transform">
+<div class="h-28 w-full rounded-md bg-surface-container-high overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Modern office interior with glass walls" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXWnKoN09Hzca1qDUILeun0f4BAjfc-3OdZnxTUB4-j1zm4RvoRJ7jDhIjiK6cohYiOi4WD9WA7aPsrQWdyuuzb6iaiFiUK6lLD_YyD3GZPoxWNA7uA96entwXnoHuPppcleDUfj28YC5wDnntpUfiCkviaAVGEEOa7VF0xbmmrroN5bt5kYxND_hkVXd02GpR9DDEpOQkKBg7VcvbPP9xD5WlQjfdoJq6TcSasUO95T5a_uMnQHvwAtj1Y8G_fkeXKBeJG2QHz0dJ"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full">
+<span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings: 'FILL' 1;">history</span>
+</div>
+</div>
+<div>
+<p class="text-label-sm text-secondary mb-1">Central Ward</p>
+<h4 class="font-headline text-sm font-bold text-on-surface leading-tight">Huduma Center GPO</h4>
+</div>
+</div>
+<!-- Recent Card 2 -->
+<div class="min-w-[200px] bg-surface-container-lowest rounded-lg p-4 flex flex-col gap-3 group active:scale-95 transition-transform">
+<div class="h-28 w-full rounded-md bg-surface-container-high overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Students in a bright university library" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGt5ZLJT8yfTHv1pbwaSFuUxJMFQtzmJv0R97gbRvIk-_mygwMTQeAlirlFoTwfR1TC64r5PvaAHG9GO9iZZJElndJWec9pTTHzUIPdf5yOjhDkUPx3i2vorSdguh0wLOBd0lxPov7GslH-46jjVLGyR2DWnBeHCfS0OoF-TkSFvfFG4IeQaq_ujS-AzpYGohTHpyTVABHxEVXkCR7Ie3iTCjjF0mteR7V0Ne2gS-qvt-51Cq4FlLqGNF4hxN-Kx6F_27QZivBeDG3"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full">
+<span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings: 'FILL' 1;">history</span>
+</div>
+</div>
+<div>
+<p class="text-label-sm text-secondary mb-1">Nairobi West</p>
+<h4 class="font-headline text-sm font-bold text-on-surface leading-tight">Strathmore Univ. Spot</h4>
+</div>
+</div>
+<!-- Recent Card 3 -->
+<div class="min-w-[200px] bg-surface-container-lowest rounded-lg p-4 flex flex-col gap-3 group active:scale-95 transition-transform">
+<div class="h-28 w-full rounded-md bg-surface-container-high overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="High rise modern skyscraper facade" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpghVg5ktOMK0MABYMJiNyXrzFvqKIXuF_cSb9jWafwpB4MVbI2t4SRFt_jbRW5QNwocQpk7lmrwwTd3OKaym6rx30oY807GhnhMQC1lE-pStdNsA8jeGEP4M4vcn6B9QAVPGbAxVvbhfXAim73zw0Zu2pJizTnNU0vzWRg1iRMkDCN5xInvwAo-kURAv6gvlOBX688aKfsUL69aLKCt2mVwSYyNjkkGhVDyUYA4sm9UdMqANhy6WRHr-_2-9kTU8lWpuzWv9H5Z9R"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full">
+<span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings: 'FILL' 1;">history</span>
+</div>
+</div>
+<div>
+<p class="text-label-sm text-secondary mb-1">Upper Hill</p>
+<h4 class="font-headline text-sm font-bold text-on-surface leading-tight">KCB Towers Office</h4>
+</div>
+</div>
+</div>
+</section>
+<!-- Saved Offices List (The Core Unit) -->
+<section class="space-y-6">
+<h3 class="font-headline text-xl font-bold text-primary px-2">Saved Offices</h3>
+<!-- Office Card 1 -->
+<div class="bg-surface-container-lowest rounded-lg p-5 flex items-center gap-4 group transition-all hover:bg-white relative">
+<div class="w-20 h-20 rounded-lg bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Kenya's national assembly building exterior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy5_4e7QQBnBe2ywLIkvmrjlJs5NbOkBSaEDBGkl7l0OmlZnTCXIjWAI4WmUG-B0BeRLk0R6drJrAS1MlP6sxhnZQCM9MHRZkmF4UAvJ7JuoLq7D0VkjJcavgwTGxjkK003L-FInFOyU8svsEuoUCuntRO6xO72TwEA4u6ftB39OlWiyHcfnTnqKZvdyw68TI6rnztpJFJqymeEjFe69tmy-VLL4oR7ezqEsG3UrbTL2K4Y3u9C0jgpH8kATeE1Z4UqqUX5nXlIyQh"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-bold uppercase tracking-wider text-on-tertiary-fixed-variant bg-tertiary-fixed px-2 py-0.5 rounded">Primary</span>
+<span class="text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">location_on</span>
+                            2.4 km away
+                        </span>
+</div>
+<h4 class="font-headline text-lg font-bold text-on-surface truncate">Nairobi County HQ</h4>
+<p class="text-body-md text-on-surface-variant line-clamp-1">City Hall Way, Central Business District</p>
+</div>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-error-container text-on-error-container hover:bg-error hover:text-white transition-colors active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bookmark_remove</span>
+</button>
+</div>
+<!-- Office Card 2 -->
+<div class="bg-surface-container-lowest rounded-lg p-5 flex items-center gap-4 group transition-all hover:bg-white relative">
+<div class="w-20 h-20 rounded-lg bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="Modern clean office reception area" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0IAAoQaGvxBfCf9ClUPrFi2htx5aRLeT_0c3y_GT2AGuubu5-Vm1kwHNlhRoq4FfZ5JIn9s4vp3dM8BTpoqN42D-spMlUJeY1_fmeYLNpauR14H0A_hAmRYyPBIawcsxtuSCDs43jkQC7s6qDWN6r9LoFUoMphNRz2_KHE29jyi8qjD0DqLEH2It82UtN3n5XoRtwtdM1VGIHqz_tlqGdzdxPLxK-1yQbpSZiCcIeEH9H3SNvs2TuUQSGHngo7MzRi3gkDZUKFQjO"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">location_on</span>
+                            5.8 km away
+                        </span>
+</div>
+<h4 class="font-headline text-lg font-bold text-on-surface truncate">Westlands Sub-County</h4>
+<p class="text-body-md text-on-surface-variant line-clamp-1">Waiyaki Way, Opposite Safaricom HQ</p>
+</div>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-high text-secondary hover:bg-error-container hover:text-on-error-container transition-colors active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bookmark_remove</span>
+</button>
+</div>
+<!-- Office Card 3 -->
+<div class="bg-surface-container-lowest rounded-lg p-5 flex items-center gap-4 group transition-all hover:bg-white relative">
+<div class="w-20 h-20 rounded-lg bg-surface-container overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="People working in a modern government building" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-pDqbJsh_hXf3uNCT_AdQoKMvJlZNtoYJaeKVmaHFpEgSy8Ztwi5nMXG_wuy7ymTPJkx0DIO-JEUnOtpiZfGAq_hjLL-1o3DIASZstwrRu6ZU5CLeaWI_u3bbJf7p5J2raENTdED2QQ3eYvurnbX2KxqBapxRlF-itjcwacvkIw-Yvy1ucNC94znt9zYvozm8Lyal0SMAWZRhBSfN5nI2S-P1AhyS78HKDKgdZKU3NJ3cs5iKjwRdUMuqV-wC6thTDUEeIz1CHpXz"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-label-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">location_on</span>
+                            12.1 km away
+                        </span>
+</div>
+<h4 class="font-headline text-lg font-bold text-on-surface truncate">Embakasi East Office</h4>
+<p class="text-body-md text-on-surface-variant line-clamp-1">Tassia Estate, Outer Ring Road</p>
+</div>
+<button class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-high text-secondary hover:bg-error-container hover:text-on-error-container transition-colors active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bookmark_remove</span>
+</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-4 pb-2 bg-[#fcf9f8]/70 dark:bg-[#1b1c1c]/70 backdrop-blur-xl rounded-t-[32px] z-50 shadow-[0_-4px_32px_rgba(27,28,28,0.06)] border-t border-[#1b1c1c]/10 dark:border-[#ffffff]/10">
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">explore</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Explore</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">search</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Search</span>
+</a>
+<!-- Active Tab: Saved -->
+<a class="flex flex-col items-center justify-center bg-[#004d40] dark:bg-[#bef500] text-white dark:text-[#253200] rounded-full px-5 py-2 transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined mb-0.5" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#5c5e5e] dark:text-[#a6a8a8] px-5 py-2 hover:opacity-80 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-['Inter'] text-[10px] font-medium tracking-wide">Profile</span>
+</a>
+</nav>
+</body></html>
