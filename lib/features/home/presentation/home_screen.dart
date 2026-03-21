@@ -91,7 +91,12 @@ class HomeScreen extends ConsumerWidget {
             minChildSize: 0.26,
             maxChildSize: 0.82,
             builder: (BuildContext context, ScrollController scrollController) {
-              final int resultsCount = officesAsync.valueOrNull?.length ?? 0;
+              final List<Office> officesForCount = officesAsync.when(
+                data: (List<Office> data) => data,
+                loading: () => <Office>[],
+                error: (_, __) => <Office>[],
+              );
+              final int resultsCount = officesForCount.length;
 
               return HomeBottomSheet(
                 resultsCount: resultsCount,
