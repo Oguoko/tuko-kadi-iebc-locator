@@ -38,8 +38,12 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.nearbySpots,
         name: 'nearby-spots',
-        builder: (BuildContext context, GoRouterState state) =>
-            const NearbySpotsScreen(),
+        builder: (BuildContext context, GoRouterState state) {
+          final Object? extra = state.extra;
+          final Office? office = extra is Office ? extra : null;
+
+          return NearbySpotsScreen(office: office);
+        },
       ),
       GoRoute(
         path: AppRoutes.search,
