@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
@@ -10,7 +11,7 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_b
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_search_bar.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office_preview_card.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   static const CameraPosition _defaultKenyaCamera = CameraPosition(
@@ -19,22 +20,115 @@ class HomeScreen extends ConsumerWidget {
   );
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  GoogleMapController? _mapController;
+  LatLng? _userLocation;
+  bool _isLocationReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserLocation();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLocationReady = true;
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLocationReady = true;
+        });
+        return;
+      }
+
+      final Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _userLocation = LatLng(position.latitude, position.longitude);
+        _isLocationReady = true;
+      });
+
+      _centerMapToUser();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLocationReady = true;
+      });
+    }
+  }
+
+  void _centerMapToUser() {
+    final LatLng? userLocation = _userLocation;
+    final GoogleMapController? controller = _mapController;
+
+    if (userLocation == null || controller == null) {
+      return;
+    }
+
+    controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: userLocation,
+          zoom: 10.0,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final AsyncValue<List<Office>> officesAsync = ref.watch(officesProvider);
     final List<Office> officesForMap = officesAsync.maybeWhen(
-      data: (List<Office> offices) => offices,
+      data: _sortOfficesByDistance,
       orElse: () => <Office>[],
     );
-    final Set<Marker> markers = _buildOfficeMarkers(officesForMap);
+
+    final Set<Marker> markers = _buildMapMarkers(officesForMap);
 
     return Scaffold(
       body: Stack(
         children: <Widget>[
           Positioned.fill(
             child: GoogleMap(
-              initialCameraPosition: _defaultKenyaCamera,
+              initialCameraPosition: HomeScreen._defaultKenyaCamera,
+              onMapCreated: (GoogleMapController controller) {
+                _mapController = controller;
+                _centerMapToUser();
+              },
               markers: markers,
-              myLocationEnabled: false,
+              myLocationEnabled: _userLocation != null,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
@@ -61,7 +155,7 @@ class HomeScreen extends ConsumerWidget {
             maxChildSize: 0.82,
             builder: (BuildContext context, ScrollController scrollController) {
               final List<Office> officesForCount = officesAsync.when(
-                data: (List<Office> data) => data,
+                data: _sortOfficesByDistance,
                 loading: () => <Office>[],
                 error: (_, __) => <Office>[],
               );
@@ -85,7 +179,9 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   data: (List<Office> offices) {
-                    if (offices.isEmpty) {
+                    final List<Office> sortedOffices = _sortOfficesByDistance(offices);
+
+                    if (sortedOffices.isEmpty) {
                       return _CenteredSheetState(
                         scrollController: scrollController,
                         child: const _MessageCard(
@@ -100,9 +196,9 @@ class HomeScreen extends ConsumerWidget {
                       controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 26),
                       itemBuilder: (BuildContext context, int index) =>
-                          OfficePreviewCard(office: offices[index]),
+                          OfficePreviewCard(office: sortedOffices[index]),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemCount: offices.length,
+                      itemCount: sortedOffices.length,
                     );
                   },
                 ),
@@ -113,14 +209,54 @@ class HomeScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'current-location',
-        onPressed: () => context.go(AppRoutes.search),
-        child: const Icon(Icons.my_location_rounded),
+        onPressed: () {
+          if (_userLocation != null) {
+            _centerMapToUser();
+            return;
+          }
+          _loadUserLocation();
+        },
+        child: Icon(
+          _isLocationReady && _userLocation == null
+              ? Icons.location_disabled_rounded
+              : Icons.my_location_rounded,
+        ),
       ),
     );
   }
 
-  Set<Marker> _buildOfficeMarkers(List<Office> offices) {
-    return offices
+  List<Office> _sortOfficesByDistance(List<Office> offices) {
+    final LatLng? userLocation = _userLocation;
+    if (userLocation == null) {
+      return offices;
+    }
+
+    final List<Office> enriched = offices.map((Office office) {
+      if (!_isValidCoordinate(office.lat, office.lng)) {
+        return office;
+      }
+
+      final double distance = Geolocator.distanceBetween(
+        userLocation.latitude,
+        userLocation.longitude,
+        office.lat!,
+        office.lng!,
+      );
+
+      return office.copyWith(distanceMeters: distance);
+    }).toList(growable: false);
+
+    enriched.sort((Office a, Office b) {
+      final double aDistance = a.distanceMeters ?? double.infinity;
+      final double bDistance = b.distanceMeters ?? double.infinity;
+      return aDistance.compareTo(bDistance);
+    });
+
+    return enriched;
+  }
+
+  Set<Marker> _buildMapMarkers(List<Office> offices) {
+    final Set<Marker> markers = offices
         .where((Office office) => _isValidCoordinate(office.lat, office.lng))
         .map((Office office) {
       final double lat = office.lat!;
@@ -142,6 +278,20 @@ class HomeScreen extends ConsumerWidget {
         ),
       );
     }).toSet();
+
+    final LatLng? userLocation = _userLocation;
+    if (userLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('user-location'),
+          position: userLocation,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(title: 'Your location'),
+        ),
+      );
+    }
+
+    return markers;
   }
 
   bool _isValidCoordinate(double? lat, double? lng) {

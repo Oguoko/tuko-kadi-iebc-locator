@@ -8,6 +8,7 @@ class Office {
     this.estimatedDistanceText,
     this.lat,
     this.lng,
+    this.distanceMeters,
   });
 
   final String id;
@@ -18,6 +19,43 @@ class Office {
   final String? estimatedDistanceText;
   final double? lat;
   final double? lng;
+  final double? distanceMeters;
 
-  String get distanceLabel => estimatedDistanceText ?? 'Distance unavailable';
+  Office copyWith({
+    String? id,
+    String? county,
+    String? constituency,
+    String? officeLocation,
+    String? landmark,
+    String? estimatedDistanceText,
+    double? lat,
+    double? lng,
+    double? distanceMeters,
+  }) {
+    return Office(
+      id: id ?? this.id,
+      county: county ?? this.county,
+      constituency: constituency ?? this.constituency,
+      officeLocation: officeLocation ?? this.officeLocation,
+      landmark: landmark ?? this.landmark,
+      estimatedDistanceText: estimatedDistanceText ?? this.estimatedDistanceText,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
+      distanceMeters: distanceMeters ?? this.distanceMeters,
+    );
+  }
+
+  String get distanceLabel {
+    final double? meters = distanceMeters;
+    if (meters != null) {
+      if (meters < 1000) {
+        return '${meters.round()} m away';
+      }
+
+      final double km = meters / 1000;
+      return '${km.toStringAsFixed(1)} km away';
+    }
+
+    return estimatedDistanceText ?? 'Distance unavailable';
+  }
 }
