@@ -118,6 +118,7 @@ class OfficePreviewCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => context.go(
                       AppRoutes.nearbySpots,
+                      extra: office,
                     ),
                     icon: const Icon(Icons.local_activity_rounded, size: 18),
                     label: const Text('Nearby Spots'),
