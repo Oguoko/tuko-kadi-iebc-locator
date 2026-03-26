@@ -27,6 +27,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   bool _isLocationReady = false;
+  String? _selectedOfficeId;
 
   @override
   void initState() {
@@ -102,6 +103,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         CameraPosition(
           target: userLocation,
           zoom: 10.0,
+        ),
+      ),
+    );
+  }
+
+  void _selectOffice(Office office) {
+    setState(() {
+      _selectedOfficeId = office.id;
+    });
+    _moveCameraToOffice(office);
+  }
+
+  void _moveCameraToOffice(Office office) {
+    final GoogleMapController? controller = _mapController;
+    if (controller == null || !_isValidCoordinate(office.lat, office.lng)) {
+      return;
+    }
+
+    controller.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(office.lat!, office.lng!),
+          zoom: 13,
         ),
       ),
     );
@@ -195,8 +219,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     return ListView.separated(
                       controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 26),
-                      itemBuilder: (BuildContext context, int index) =>
-                          OfficePreviewCard(office: sortedOffices[index]),
+                      itemBuilder: (BuildContext context, int index) {
+                        final Office office = sortedOffices[index];
+                        return OfficePreviewCard(
+                          office: office,
+                          isSelected: office.id == _selectedOfficeId,
+                          onTap: () => _selectOffice(office),
+                        );
+                      },
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemCount: sortedOffices.length,
                     );
@@ -272,10 +302,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Marker(
         markerId: MarkerId(office.id),
         position: LatLng(lat, lng),
+        icon: office.id == _selectedOfficeId
+            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+            : BitmapDescriptor.defaultMarker,
         infoWindow: InfoWindow(
           title: title,
           snippet: snippet.isEmpty ? null : snippet,
         ),
+        onTap: () => _selectOffice(office),
       );
     }).toSet();
 
