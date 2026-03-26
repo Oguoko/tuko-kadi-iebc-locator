@@ -7,16 +7,30 @@ class OfficePreviewCard extends StatelessWidget {
   const OfficePreviewCard({
     super.key,
     required this.office,
+    this.isSelected = false,
+    this.onTap,
   });
 
   final Office office;
+  final bool isSelected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final Color selectedBorderColor = colors.primary;
+    final Color selectedCardColor = colors.primaryContainer.withValues(alpha: 0.35);
 
-    return Card(
+    final Widget cardContent = Card(
       margin: EdgeInsets.zero,
+      color: isSelected ? selectedCardColor : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? selectedBorderColor : colors.outlineVariant,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -91,6 +105,15 @@ class OfficePreviewCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: cardContent,
       ),
     );
   }
