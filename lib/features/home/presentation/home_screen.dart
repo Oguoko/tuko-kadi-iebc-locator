@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/application/offices_provider.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
@@ -12,63 +13,31 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  static const CameraPosition _defaultKenyaCamera = CameraPosition(
+    target: LatLng(-0.0236, 37.9062),
+    zoom: 6.0,
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
     final AsyncValue<List<Office>> officesAsync = ref.watch(officesProvider);
+    final List<Office> officesForMap = officesAsync.maybeWhen(
+      data: (List<Office> offices) => offices,
+      orElse: () => <Office>[],
+    );
+    final Set<Marker> markers = _buildOfficeMarkers(officesForMap);
 
     return Scaffold(
       body: Stack(
         children: <Widget>[
           Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: <Color>[
-                    colors.primaryContainer.withValues(alpha: 0.45),
-                    colors.tertiaryContainer.withValues(alpha: 0.2),
-                    colors.surface,
-                  ],
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 168, 16, 0),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: colors.outlineVariant),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        Icons.map_rounded,
-                        size: 52,
-                        color: colors.primary,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Map View',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'Live map integration drops in here.\nShowing nearby constituency offices around you.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: colors.onSurfaceVariant),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: GoogleMap(
+              initialCameraPosition: _defaultKenyaCamera,
+              markers: markers,
+              myLocationEnabled: false,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
             ),
           ),
           SafeArea(
@@ -148,6 +117,48 @@ class HomeScreen extends ConsumerWidget {
         child: const Icon(Icons.my_location_rounded),
       ),
     );
+  }
+
+  Set<Marker> _buildOfficeMarkers(List<Office> offices) {
+    return offices
+        .where((Office office) => _isValidCoordinate(office.lat, office.lng))
+        .map((Office office) {
+      final double lat = office.lat!;
+      final double lng = office.lng!;
+      final String title = office.constituency.isNotEmpty
+          ? office.constituency
+          : 'IEBC Office';
+      final String snippet = _buildInfoSnippet(
+        county: office.county,
+        landmark: office.landmark,
+      );
+
+      return Marker(
+        markerId: MarkerId(office.id),
+        position: LatLng(lat, lng),
+        infoWindow: InfoWindow(
+          title: title,
+          snippet: snippet.isEmpty ? null : snippet,
+        ),
+      );
+    }).toSet();
+  }
+
+  bool _isValidCoordinate(double? lat, double? lng) {
+    if (lat == null || lng == null) {
+      return false;
+    }
+
+    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+  }
+
+  String _buildInfoSnippet({required String county, required String landmark}) {
+    final List<String> parts = <String>[
+      if (county.isNotEmpty) county,
+      if (landmark.isNotEmpty) landmark,
+    ];
+
+    return parts.join(' • ');
   }
 }
 
