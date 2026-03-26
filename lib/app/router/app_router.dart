@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/home_screen.dart';
 import 'package:tuko_kadi_iebc_locator/features/nearby_spots/presentation/nearby_spots_screen.dart';
 import 'package:tuko_kadi_iebc_locator/features/office_details/presentation/office_details_screen.dart';
@@ -27,8 +28,12 @@ abstract final class AppRouter {
       GoRoute(
         path: AppRoutes.officeDetails,
         name: 'office-details',
-        builder: (BuildContext context, GoRouterState state) =>
-            const OfficeDetailsScreen(),
+        builder: (BuildContext context, GoRouterState state) {
+          final Object? extra = state.extra;
+          final Office? office = extra is Office ? extra : null;
+
+          return OfficeDetailsScreen(office: office);
+        },
       ),
       GoRoute(
         path: AppRoutes.nearbySpots,

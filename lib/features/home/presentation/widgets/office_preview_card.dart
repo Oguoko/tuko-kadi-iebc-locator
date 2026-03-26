@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
+import 'package:tuko_kadi_iebc_locator/shared/utils/google_maps_directions.dart';
 
 class OfficePreviewCard extends StatelessWidget {
   const OfficePreviewCard({
@@ -20,6 +21,10 @@ class OfficePreviewCard extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final Color selectedBorderColor = colors.primary;
     final Color selectedCardColor = colors.primaryContainer.withValues(alpha: 0.35);
+    final bool canOpenDirections = GoogleMapsDirections.hasValidCoordinates(
+      office.lat,
+      office.lng,
+    );
 
     final Widget cardContent = Card(
       margin: EdgeInsets.zero,
@@ -88,7 +93,22 @@ class OfficePreviewCard extends StatelessWidget {
               children: <Widget>[
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: () => context.go(AppRoutes.officeDetails),
+                    onPressed: canOpenDirections
+                        ? () async {
+                            final bool launched = await GoogleMapsDirections.openDirections(
+                              lat: office.lat!,
+                              lng: office.lng!,
+                            );
+
+                            if (!launched && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Unable to open Google Maps directions.'),
+                                ),
+                              );
+                            }
+                          }
+                        : null,
                     icon: const Icon(Icons.directions_rounded, size: 18),
                     label: const Text('Directions'),
                   ),
@@ -96,7 +116,9 @@ class OfficePreviewCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => context.go(AppRoutes.nearbySpots),
+                    onPressed: () => context.go(
+                      AppRoutes.nearbySpots,
+                    ),
                     icon: const Icon(Icons.local_activity_rounded, size: 18),
                     label: const Text('Nearby Spots'),
                   ),
