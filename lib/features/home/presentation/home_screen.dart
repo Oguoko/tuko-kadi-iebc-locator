@@ -108,11 +108,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _selectOffice(Office office) {
+  void _setSelectedOffice(Office office) {
     setState(() {
       _selectedOfficeId = office.id;
     });
     _moveCameraToOffice(office);
+  }
+
+  void _handleMarkerTap(Office office) {
+    _setSelectedOffice(office);
+  }
+
+  void _handleCardTap(Office office) {
+    _setSelectedOffice(office);
   }
 
   void _moveCameraToOffice(Office office) {
@@ -224,7 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         return OfficePreviewCard(
                           office: office,
                           isSelected: office.id == _selectedOfficeId,
-                          onTap: () => _selectOffice(office),
+                          onTap: () => _handleCardTap(office),
                         );
                       },
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
@@ -286,11 +294,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Set<Marker> _buildMapMarkers(List<Office> offices) {
-    final Set<Marker> markers = offices
-        .where((Office office) => _isValidCoordinate(office.lat, office.lng))
-        .map((Office office) {
-      final double lat = office.lat!;
-      final double lng = office.lng!;
+    final Set<Marker> markers = <Marker>{};
+    for (final Office office in offices) {
+      final double? lat = office.lat;
+      final double? lng = office.lng;
+      if (!_isValidCoordinate(lat, lng)) {
+        continue;
+      }
+
       final String title = office.constituency.isNotEmpty
           ? office.constituency
           : 'IEBC Office';
@@ -299,19 +310,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         landmark: office.landmark,
       );
 
-      return Marker(
-        markerId: MarkerId(office.id),
-        position: LatLng(lat, lng),
-        icon: office.id == _selectedOfficeId
-            ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
-            : BitmapDescriptor.defaultMarker,
-        infoWindow: InfoWindow(
-          title: title,
-          snippet: snippet.isEmpty ? null : snippet,
+      markers.add(
+        Marker(
+          markerId: MarkerId(office.id),
+          position: LatLng(lat, lng),
+          icon: office.id == _selectedOfficeId
+              ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
+              : BitmapDescriptor.defaultMarker,
+          infoWindow: InfoWindow(
+            title: title,
+            snippet: snippet.isEmpty ? null : snippet,
+          ),
+          onTap: () => _handleMarkerTap(office),
         ),
-        onTap: () => _selectOffice(office),
       );
-    }).toSet();
+    }
 
     final LatLng? userLocation = _userLocation;
     if (userLocation != null) {
