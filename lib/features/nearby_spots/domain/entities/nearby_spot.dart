@@ -2,14 +2,14 @@ class NearbySpot {
   const NearbySpot({
     required this.id,
     required this.name,
-    required this.category,
+    required this.primaryType,
     this.rating,
     this.distanceMeters,
   });
 
   final String id;
   final String name;
-  final String category;
+  final String primaryType;
   final double? rating;
   final double? distanceMeters;
 
@@ -40,18 +40,17 @@ class NearbySpot {
     final Map<String, dynamic>? primaryTypeDisplayName =
         _asStringMap(json['primaryTypeDisplayName']);
     final Map<String, dynamic>? displayName = _asStringMap(json['displayName']);
-    final String category = _resolveCategory(primaryTypeDisplayName, json['types']);
 
     return NearbySpot(
       id: _asString(json['id']),
       name: _asString(displayName?['text']),
-      category: category,
+      primaryType: _resolvePrimaryType(primaryTypeDisplayName, json['types']),
       rating: _asDouble(json['rating']),
       distanceMeters: _asDouble(json['distanceMeters']),
     );
   }
 
-  static String _resolveCategory(
+  static String _resolvePrimaryType(
     Map<String, dynamic>? primaryTypeDisplayName,
     Object? types,
   ) {
@@ -69,7 +68,7 @@ class NearbySpot {
       }
     }
 
-    return 'Lifestyle spot';
+    return 'Place';
   }
 
   static String _asString(Object? value) {
@@ -95,4 +94,27 @@ class NearbySpot {
 
     return null;
   }
+}
+
+enum NearbySpotCategory {
+  eateries(
+    label: 'Eateries',
+    includedTypes: <String>['restaurant', 'meal_takeaway'],
+  ),
+  cafes(
+    label: 'Cafes',
+    includedTypes: <String>['cafe', 'coffee_shop'],
+  ),
+  chillSpots(
+    label: 'Chill Spots',
+    includedTypes: <String>['park', 'tourist_attraction', 'bar'],
+  );
+
+  const NearbySpotCategory({
+    required this.label,
+    required this.includedTypes,
+  });
+
+  final String label;
+  final List<String> includedTypes;
 }

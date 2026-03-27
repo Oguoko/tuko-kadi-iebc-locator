@@ -11,20 +11,14 @@ class GooglePlacesService {
         _apiKey = apiKey ?? const String.fromEnvironment('GOOGLE_PLACES_API_KEY');
 
   static const String _endpoint = 'https://places.googleapis.com/v1/places:searchNearby';
-  static const List<String> _includedTypes = <String>[
-    'restaurant',
-    'cafe',
-    'bar',
-    'tourist_attraction',
-    'park',
-  ];
 
   final http.Client _client;
   final String _apiKey;
 
-  Future<List<NearbySpot>> fetchNearbyLifestyleSpots({
+  Future<List<NearbySpot>> fetchNearbySpots({
     required double latitude,
     required double longitude,
+    required NearbySpotCategory category,
   }) async {
     if (_apiKey.isEmpty) {
       throw const PlacesApiException(
@@ -42,7 +36,7 @@ class GooglePlacesService {
             'places.id,places.displayName,places.primaryTypeDisplayName,places.types,places.rating,places.distanceMeters',
       },
       body: jsonEncode(<String, dynamic>{
-        'includedTypes': _includedTypes,
+        'includedTypes': category.includedTypes,
         'maxResultCount': 20,
         'rankPreference': 'DISTANCE',
         'locationRestriction': <String, dynamic>{
@@ -59,7 +53,7 @@ class GooglePlacesService {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw PlacesApiException(
-        'Failed to load nearby spots (${response.statusCode}).',
+        'Failed to load nearby ${category.label.toLowerCase()} (${response.statusCode}).',
       );
     }
 
