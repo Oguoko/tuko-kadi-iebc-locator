@@ -14,12 +14,14 @@ class NearbySpotsScreen extends StatefulWidget {
 
 class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
   late final GooglePlacesService _placesService;
+  late NearbySpotCategory _selectedCategory;
   Future<List<NearbySpot>>? _nearbySpotsFuture;
 
   @override
   void initState() {
     super.initState();
     _placesService = GooglePlacesService();
+    _selectedCategory = NearbySpotCategory.eateries;
     _nearbySpotsFuture = _loadNearbySpots();
   }
 
@@ -29,10 +31,22 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
       return Future<List<NearbySpot>>.value(<NearbySpot>[]);
     }
 
-    return _placesService.fetchNearbyLifestyleSpots(
+    return _placesService.fetchNearbySpots(
       latitude: office.lat!,
       longitude: office.lng!,
+      category: _selectedCategory,
     );
+  }
+
+  void _setCategory(NearbySpotCategory category) {
+    if (_selectedCategory == category) {
+      return;
+    }
+
+    setState(() {
+      _selectedCategory = category;
+      _nearbySpotsFuture = _loadNearbySpots();
+    });
   }
 
   void _retry() {
@@ -50,50 +64,71 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
       appBar: AppBar(title: const Text('Nearby Spots')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: !hasCoordinates
-            ? const _InfoState(
-                icon: Icons.location_off_rounded,
-                title: 'Nearby spots unavailable',
-                subtitle: 'Select an office with valid coordinates to view nearby lifestyle places.',
-              )
-            : FutureBuilder<List<NearbySpot>>(
-                future: _nearbySpotsFuture,
-                builder: (BuildContext context, AsyncSnapshot<List<NearbySpot>> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: NearbySpotCategory.values
+                  .map(
+                    (NearbySpotCategory category) => ChoiceChip(
+                      label: Text(category.label),
+                      selected: _selectedCategory == category,
+                      onSelected: hasCoordinates ? (_) => _setCategory(category) : null,
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: !hasCoordinates
+                  ? const _InfoState(
+                      icon: Icons.location_off_rounded,
+                      title: 'Nearby spots unavailable',
+                      subtitle: 'Select an office with valid coordinates to view nearby spots.',
+                    )
+                  : FutureBuilder<List<NearbySpot>>(
+                      future: _nearbySpotsFuture,
+                      builder: (BuildContext context, AsyncSnapshot<List<NearbySpot>> snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-                  if (snapshot.hasError) {
-                    return _InfoState(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Failed to load nearby spots',
-                      subtitle: '${snapshot.error}',
-                      actionLabel: 'Retry',
-                      onActionPressed: _retry,
-                    );
-                  }
+                        if (snapshot.hasError) {
+                          return _InfoState(
+                            icon: Icons.error_outline_rounded,
+                            title: 'Failed to load nearby spots',
+                            subtitle: '${snapshot.error}',
+                            actionLabel: 'Retry',
+                            onActionPressed: _retry,
+                          );
+                        }
 
-                  final List<NearbySpot> spots = snapshot.data ?? <NearbySpot>[];
-                  if (spots.isEmpty) {
-                    return _InfoState(
-                      icon: Icons.explore_off_rounded,
-                      title: 'No nearby lifestyle spots found',
-                      subtitle: 'Try another office or move to a different location.',
-                      actionLabel: 'Refresh',
-                      onActionPressed: _retry,
-                    );
-                  }
+                        final List<NearbySpot> spots = snapshot.data ?? <NearbySpot>[];
+                        if (spots.isEmpty) {
+                          return _InfoState(
+                            icon: Icons.explore_off_rounded,
+                            title: 'No ${_selectedCategory.label.toLowerCase()} found nearby',
+                            subtitle: 'Try a different category or select another office.',
+                            actionLabel: 'Refresh',
+                            onActionPressed: _retry,
+                          );
+                        }
 
-                  return ListView.separated(
-                    itemCount: spots.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (BuildContext context, int index) {
-                      final NearbySpot spot = spots[index];
-                      return _NearbySpotCard(spot: spot);
-                    },
-                  );
-                },
-              ),
+                        return ListView.separated(
+                          itemCount: spots.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 12),
+                          itemBuilder: (BuildContext context, int index) {
+                            final NearbySpot spot = spots[index];
+                            return _NearbySpotCard(spot: spot);
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -119,7 +154,7 @@ class _NearbySpotCard extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 8),
-            Text('Category: ${spot.category}'),
+            Text('Type: ${spot.primaryType}'),
             const SizedBox(height: 4),
             Text('Rating: ${spot.ratingLabel}'),
             const SizedBox(height: 4),
