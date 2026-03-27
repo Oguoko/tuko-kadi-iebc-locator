@@ -24,15 +24,22 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
+enum _LocationIssue {
+  serviceDisabled,
+  permissionDenied,
+  permissionDeniedForever,
+  unavailable,
+}
+
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   bool _isLocationReady = false;
   bool _isLocating = false;
-  bool _hasShownLocationMessage = false;
   String? _selectedOfficeId;
   late final TextEditingController _searchController;
   String _searchQuery = '';
+  _LocationIssue? _locationIssue;
 
   @override
   void initState() {
@@ -69,6 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     setState(() {
       _isLocating = true;
+      _locationIssue = null;
     });
 
     try {
@@ -79,10 +87,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
         setState(() {
           _isLocationReady = true;
+          _locationIssue = _LocationIssue.serviceDisabled;
         });
-        _showSoftLocationMessage(
-          'Location services are off. Showing offices in default order.',
-        );
         _centerMapToDefault();
         return;
       }
@@ -98,10 +104,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
         setState(() {
           _isLocationReady = true;
+          _locationIssue = _LocationIssue.permissionDenied;
         });
-        _showSoftLocationMessage(
-          'Location permission denied. Showing offices in default order.',
-        );
         _centerMapToDefault();
         return;
       }
@@ -112,10 +116,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
         setState(() {
           _isLocationReady = true;
+          _locationIssue = _LocationIssue.permissionDeniedForever;
         });
-        _showSoftLocationMessage(
-          'Location permission is permanently denied. Showing offices in default order.',
-        );
         _centerMapToDefault();
         return;
       }
@@ -142,10 +144,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
       setState(() {
         _isLocationReady = true;
+        _locationIssue = _LocationIssue.unavailable;
       });
-      _showSoftLocationMessage(
-        'Could not get your location right now. Showing default office order.',
-      );
       _centerMapToDefault();
     } finally {
       if (!mounted) {
@@ -155,22 +155,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _isLocating = false;
       });
     }
-  }
-
-  void _showSoftLocationMessage(String message) {
-    if (_hasShownLocationMessage || !mounted) {
-      return;
-    }
-
-    _hasShownLocationMessage = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    });
   }
 
   void _centerMapToUser() {
@@ -264,6 +248,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  _LocationCopy _locationCopyForIssue(_LocationIssue issue) {
+    switch (issue) {
+      case _LocationIssue.serviceDisabled:
+        return const _LocationCopy(
+          title: 'Location is turned off',
+          subtitle: 'Enable device location to sort offices nearest to you.',
+          action: 'Try again',
+        );
+      case _LocationIssue.permissionDenied:
+        return const _LocationCopy(
+          title: 'Location permission denied',
+          subtitle: 'Allow location access so we can show the closest offices first.',
+          action: 'Retry permission',
+        );
+      case _LocationIssue.permissionDeniedForever:
+        return const _LocationCopy(
+          title: 'Location access blocked',
+          subtitle: 'Location permission is permanently denied. Open settings, then retry.',
+          action: 'Retry',
+        );
+      case _LocationIssue.unavailable:
+        return const _LocationCopy(
+          title: 'Could not fetch your location',
+          subtitle: 'We are showing all offices for now. You can retry anytime.',
+          action: 'Try again',
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final AsyncValue<List<Office>> officesAsync = ref.watch(officesProvider);
@@ -274,6 +287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final List<Office> filteredOffices = _filterOfficesBySearch(sortedOffices);
 
     final Set<Marker> markers = _buildMapMarkers(filteredOffices);
+    final bool mapBusy = officesAsync.isLoading || (_isLocating && !_isLocationReady);
 
     return Scaffold(
       body: Stack(
@@ -296,6 +310,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               mapToolbarEnabled: false,
             ),
           ),
+          IgnorePointer(
+            ignoring: true,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 220),
+              opacity: mapBusy ? 1 : 0,
+              child: const _MapLoadingOverlay(),
+            ),
+          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -309,68 +331,111 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   const FilterChipRow(),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    child: _locationIssue == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            key: ValueKey<_LocationIssue>(_locationIssue!),
+                            padding: const EdgeInsets.only(top: 12),
+                            child: _LocationIssueBanner(
+                              copy: _locationCopyForIssue(_locationIssue!),
+                              isRetrying: _isLocating,
+                              onRetry: _loadUserLocation,
+                            ),
+                          ),
+                  ),
                 ],
               ),
             ),
           ),
           DraggableScrollableSheet(
-            initialChildSize: 0.38,
-            minChildSize: 0.26,
-            maxChildSize: 0.82,
+            initialChildSize: 0.4,
+            minChildSize: 0.28,
+            maxChildSize: 0.84,
             builder: (BuildContext context, ScrollController scrollController) {
               final int resultsCount = filteredOffices.length;
 
               return HomeBottomSheet(
                 resultsCount: resultsCount,
-                child: officesAsync.when(
-                  loading: () => _CenteredSheetState(
-                    scrollController: scrollController,
-                    child: const CircularProgressIndicator(),
-                  ),
-                  error: (Object error, StackTrace stackTrace) => _CenteredSheetState(
-                    scrollController: scrollController,
-                    child: _MessageCard(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Unable to load offices',
-                      subtitle: 'Please check your connection and try again.',
-                      actionLabel: 'Retry',
-                      onActionPressed: () => ref.invalidate(officesProvider),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  child: officesAsync.when(
+                    loading: () => _CardsLoadingState(
+                      key: const ValueKey<String>('loading'),
+                      scrollController: scrollController,
                     ),
-                  ),
-                  data: (List<Office> offices) {
-                    final List<Office> sortedOffices = _sortOfficesByDistance(offices);
-                    final List<Office> filteredOffices = _filterOfficesBySearch(sortedOffices);
+                    error: (Object error, StackTrace stackTrace) => _CenteredSheetState(
+                      key: const ValueKey<String>('error'),
+                      scrollController: scrollController,
+                      child: _MessageCard(
+                        icon: Icons.cloud_off_rounded,
+                        title: 'We couldn\'t load offices right now',
+                        subtitle:
+                            'Check your internet connection and refresh to continue.',
+                        actionLabel: 'Retry',
+                        onActionPressed: () => ref.invalidate(officesProvider),
+                      ),
+                    ),
+                    data: (List<Office> offices) {
+                      final List<Office> sortedOffices = _sortOfficesByDistance(offices);
+                      final List<Office> filteredOffices =
+                          _filterOfficesBySearch(sortedOffices);
 
-                    if (filteredOffices.isEmpty) {
-                      return _CenteredSheetState(
-                        scrollController: scrollController,
-                        child: _MessageCard(
-                          icon: Icons.inbox_rounded,
-                          title: _searchQuery.isEmpty
-                              ? 'No offices available'
-                              : 'No offices match your search',
-                          subtitle: _searchQuery.isEmpty
-                              ? 'IEBC offices will appear here once data is added.'
-                              : 'Try another county, constituency, office location, or landmark.',
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 26),
-                      itemBuilder: (BuildContext context, int index) {
-                        final Office office = filteredOffices[index];
-                        return OfficePreviewCard(
-                          office: office,
-                          isSelected: office.id == _selectedOfficeId,
-                          onTap: () => _handleCardTap(office),
+                      if (filteredOffices.isEmpty) {
+                        return _CenteredSheetState(
+                          key: const ValueKey<String>('empty'),
+                          scrollController: scrollController,
+                          child: _MessageCard(
+                            icon: _searchQuery.isEmpty
+                                ? Icons.location_city_rounded
+                                : Icons.search_off_rounded,
+                            title: _searchQuery.isEmpty
+                                ? 'No offices available yet'
+                                : 'No matches for "$_searchQuery"',
+                            subtitle: _searchQuery.isEmpty
+                                ? 'Office listings will appear here once data sync completes.'
+                                : 'Try a county, constituency, office location, or nearby landmark.',
+                            actionLabel:
+                                _searchQuery.isEmpty ? null : 'Clear search filters',
+                            onActionPressed: _searchQuery.isEmpty ? null : _clearSearch,
+                          ),
                         );
-                      },
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemCount: filteredOffices.length,
-                    );
-                  },
+                      }
+
+                      return ListView.separated(
+                        key: const ValueKey<String>('data'),
+                        controller: scrollController,
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 26),
+                        itemBuilder: (BuildContext context, int index) {
+                          final Office office = filteredOffices[index];
+                          return TweenAnimationBuilder<double>(
+                            duration: Duration(milliseconds: 180 + (index * 26)),
+                            curve: Curves.easeOut,
+                            tween: Tween<double>(begin: 0.94, end: 1),
+                            builder: (BuildContext context, double value, Widget? child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, (1 - value) * 16),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: OfficePreviewCard(
+                              office: office,
+                              isSelected: office.id == _selectedOfficeId,
+                              onTap: () => _handleCardTap(office),
+                            ),
+                          );
+                        },
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemCount: filteredOffices.length,
+                      );
+                    },
+                  ),
                 ),
               );
             },
@@ -515,6 +580,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 class _CenteredSheetState extends StatelessWidget {
   const _CenteredSheetState({
+    super.key,
     required this.scrollController,
     required this.child,
   });
@@ -528,9 +594,189 @@ class _CenteredSheetState extends StatelessWidget {
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
       children: <Widget>[
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         Center(child: child),
       ],
+    );
+  }
+}
+
+class _CardsLoadingState extends StatelessWidget {
+  const _CardsLoadingState({
+    super.key,
+    required this.scrollController,
+  });
+
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      controller: scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 22),
+      itemBuilder: (_, __) => const _OfficeCardSkeleton(),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemCount: 4,
+    );
+  }
+}
+
+class _MapLoadingOverlay extends StatelessWidget {
+  const _MapLoadingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            colors.surface.withValues(alpha: 0.42),
+            colors.surface.withValues(alpha: 0.1),
+            colors.surface.withValues(alpha: 0.3),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.surface.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: colors.shadow.withValues(alpha: 0.14),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Loading map and nearby offices…',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OfficeCardSkeleton extends StatelessWidget {
+  const _OfficeCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _SkeletonLine(
+                    widthFactor: 0.68,
+                    color: colors.surfaceContainerHighest,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _SkeletonBox(
+                  width: 72,
+                  height: 26,
+                  color: colors.surfaceContainerHigh,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _SkeletonLine(widthFactor: 0.52, color: colors.surfaceContainerHighest),
+            const SizedBox(height: 12),
+            _SkeletonLine(widthFactor: 0.82, color: colors.surfaceContainerHighest),
+            const SizedBox(height: 16),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _SkeletonBox(
+                    width: double.infinity,
+                    height: 38,
+                    color: colors.surfaceContainerHigh,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SkeletonBox(
+                    width: double.infinity,
+                    height: 38,
+                    color: colors.surfaceContainerHigh,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonLine extends StatelessWidget {
+  const _SkeletonLine({
+    required this.widthFactor,
+    required this.color,
+  });
+
+  final double widthFactor;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      alignment: Alignment.centerLeft,
+      widthFactor: widthFactor,
+      child: _SkeletonBox(width: double.infinity, height: 14, color: color),
+    );
+  }
+}
+
+class _SkeletonBox extends StatelessWidget {
+  const _SkeletonBox({
+    required this.width,
+    required this.height,
+    required this.color,
+  });
+
+  final double width;
+  final double height;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SizedBox(width: width, height: height),
     );
   }
 }
@@ -556,13 +802,21 @@ class _MessageCard extends StatelessWidget {
 
     return Card(
       margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 34, color: colors.primary),
-            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colors.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 24, color: colors.onPrimaryContainer),
+            ),
+            const SizedBox(height: 14),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -570,17 +824,21 @@ class _MessageCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: colors.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    height: 1.35,
+                  ),
             ),
             if (actionLabel != null && onActionPressed != null) ...<Widget>[
-              const SizedBox(height: 14),
-              FilledButton(
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
                 onPressed: onActionPressed,
-                child: Text(actionLabel!),
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(actionLabel!),
               ),
             ],
           ],
@@ -588,4 +846,79 @@ class _MessageCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _LocationIssueBanner extends StatelessWidget {
+  const _LocationIssueBanner({
+    required this.copy,
+    required this.isRetrying,
+    required this.onRetry,
+  });
+
+  final _LocationCopy copy;
+  final bool isRetrying;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Material(
+      color: colors.surface.withValues(alpha: 0.96),
+      borderRadius: BorderRadius.circular(14),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.location_off_rounded, color: colors.error, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    copy.title,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    copy.subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: isRetrying ? null : onRetry,
+              child: isRetrying
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(copy.action),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationCopy {
+  const _LocationCopy({
+    required this.title,
+    required this.subtitle,
+    required this.action,
+  });
+
+  final String title;
+  final String subtitle;
+  final String action;
 }
