@@ -1,3 +1,5 @@
+import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
+
 class Office {
   const Office({
     required this.id,
@@ -46,16 +48,9 @@ class Office {
   }
 
   String get distanceLabel {
-    final double? meters = distanceMeters;
-    if (meters != null) {
-      if (meters < 1000) {
-        return '${meters.round()} m away';
-      }
-
-      final double km = meters / 1000;
-      return '${km.toStringAsFixed(1)} km away';
-    }
-
-    return estimatedDistanceText ?? 'Distance unavailable';
+    return DistanceUtils.formatDistanceLabel(
+      distanceMeters,
+      fallback: estimatedDistanceText ?? 'Distance unavailable',
+    );
   }
 }

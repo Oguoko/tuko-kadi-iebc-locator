@@ -10,6 +10,7 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/filter
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_bottom_sheet.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_search_bar.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office_preview_card.dart';
+import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -27,6 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   bool _isLocationReady = false;
+  bool _hasShownLocationMessage = false;
   String? _selectedOfficeId;
 
   @override
@@ -45,6 +47,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         setState(() {
           _isLocationReady = true;
         });
+        _showSoftLocationMessage(
+          'Location services are off. Showing offices in default order.',
+        );
         _centerMapToDefault();
         return;
       }
@@ -54,14 +59,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         permission = await Geolocator.requestPermission();
       }
 
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied) {
         if (!mounted) {
           return;
         }
         setState(() {
           _isLocationReady = true;
         });
+        _showSoftLocationMessage(
+          'Location permission denied. Showing offices in default order.',
+        );
+        _centerMapToDefault();
+        return;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _isLocationReady = true;
+        });
+        _showSoftLocationMessage(
+          'Location permission is permanently denied. Showing offices in default order.',
+        );
         _centerMapToDefault();
         return;
       }
@@ -89,8 +110,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isLocationReady = true;
       });
+      _showSoftLocationMessage(
+        'Could not get your location right now. Showing default office order.',
+      );
       _centerMapToDefault();
     }
+  }
+
+  void _showSoftLocationMessage(String message) {
+    if (_hasShownLocationMessage || !mounted) {
+      return;
+    }
+
+    _hasShownLocationMessage = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    });
   }
 
   void _centerMapToUser() {
@@ -289,7 +329,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Office> _sortOfficesByDistance(List<Office> offices) {
     final LatLng? userLocation = _userLocation;
     if (userLocation == null) {
-      return offices;
+      return List<Office>.from(offices, growable: false);
     }
 
     final List<Office> enriched = offices.map((Office office) {
@@ -297,11 +337,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return office;
       }
 
-      final double distance = Geolocator.distanceBetween(
-        userLocation.latitude,
-        userLocation.longitude,
-        office.lat!,
-        office.lng!,
+      final double distance = DistanceUtils.calculateDistanceMeters(
+        startLatitude: userLocation.latitude,
+        startLongitude: userLocation.longitude,
+        endLatitude: office.lat!,
+        endLongitude: office.lng!,
       );
 
       return office.copyWith(distanceMeters: distance);
