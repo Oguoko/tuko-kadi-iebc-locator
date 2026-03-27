@@ -28,6 +28,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   bool _isLocationReady = false;
+  bool _isLocating = false;
   bool _hasShownLocationMessage = false;
   String? _selectedOfficeId;
 
@@ -37,7 +38,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _loadUserLocation();
   }
 
+  Future<void> _onLocationButtonPressed() async {
+    if (_isLocating) {
+      return;
+    }
+
+    final LatLng? existingLocation = _userLocation;
+    if (existingLocation != null) {
+      _centerMapToUser();
+      return;
+    }
+
+    await _loadUserLocation();
+  }
+
   Future<void> _loadUserLocation() async {
+    if (_isLocating) {
+      return;
+    }
+
+    setState(() {
+      _isLocating = true;
+    });
+
     try {
       final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -114,6 +137,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'Could not get your location right now. Showing default office order.',
       );
       _centerMapToDefault();
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLocating = false;
+      });
     }
   }
 
@@ -310,18 +340,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'current-location',
-        onPressed: () {
-          if (_userLocation != null) {
-            _centerMapToUser();
-            return;
-          }
-          _loadUserLocation();
-        },
-        child: Icon(
-          _isLocationReady && _userLocation == null
-              ? Icons.location_disabled_rounded
-              : Icons.my_location_rounded,
-        ),
+        onPressed: _onLocationButtonPressed,
+        child: _isLocating
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.4),
+              )
+            : Icon(
+                _isLocationReady && _userLocation == null
+                    ? Icons.location_disabled_rounded
+                    : Icons.my_location_rounded,
+              ),
       ),
     );
   }
