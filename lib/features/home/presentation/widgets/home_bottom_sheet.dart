@@ -17,7 +17,7 @@ class HomeBottomSheet extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: colors.shadow.withValues(alpha: 0.18),
@@ -41,23 +41,32 @@ class HomeBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: Row(
               children: <Widget>[
-                Text(
-                  'Nearby IEBC offices',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    'Nearby IEBC offices',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  '$resultsCount results',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colors.onSurfaceVariant,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$resultsCount results',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Expanded(child: child),
         ],
       ),
