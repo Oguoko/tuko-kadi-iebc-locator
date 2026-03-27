@@ -14,9 +14,9 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
-  static const CameraPosition _defaultKenyaCamera = CameraPosition(
-    target: LatLng(-0.0236, 37.9062),
-    zoom: 6.0,
+  static const CameraPosition _defaultNairobiCamera = CameraPosition(
+    target: LatLng(-1.286389, 36.817223),
+    zoom: 10.5,
   );
 
   @override
@@ -45,6 +45,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         setState(() {
           _isLocationReady = true;
         });
+        _centerMapToDefault();
         return;
       }
 
@@ -61,6 +62,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         setState(() {
           _isLocationReady = true;
         });
+        _centerMapToDefault();
         return;
       }
 
@@ -87,22 +89,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _isLocationReady = true;
       });
+      _centerMapToDefault();
     }
   }
 
   void _centerMapToUser() {
     final LatLng? userLocation = _userLocation;
-    final GoogleMapController? controller = _mapController;
 
-    if (userLocation == null || controller == null) {
+    if (userLocation == null) {
+      return;
+    }
+
+    _updateCamera(
+      target: userLocation,
+      zoom: 12.5,
+    );
+  }
+
+  void _centerMapToDefault() {
+    _updateCamera(
+      target: HomeScreen._defaultNairobiCamera.target,
+      zoom: HomeScreen._defaultNairobiCamera.zoom,
+    );
+  }
+
+  void _updateCamera({
+    required LatLng target,
+    required double zoom,
+  }) {
+    final GoogleMapController? controller = _mapController;
+    if (controller == null) {
       return;
     }
 
     controller.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
-          target: userLocation,
-          zoom: 10.0,
+          target: target,
+          zoom: zoom,
         ),
       ),
     );
@@ -124,18 +148,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _moveCameraToOffice(Office office) {
-    final GoogleMapController? controller = _mapController;
-    if (controller == null || !_isValidCoordinate(office.lat, office.lng)) {
+    if (!_isValidCoordinate(office.lat, office.lng)) {
       return;
     }
 
-    controller.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(office.lat!, office.lng!),
-          zoom: 13,
-        ),
-      ),
+    _updateCamera(
+      target: LatLng(office.lat!, office.lng!),
+      zoom: 13,
     );
   }
 
@@ -154,10 +173,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: <Widget>[
           Positioned.fill(
             child: GoogleMap(
-              initialCameraPosition: HomeScreen._defaultKenyaCamera,
+              initialCameraPosition: HomeScreen._defaultNairobiCamera,
               onMapCreated: (GoogleMapController controller) {
                 _mapController = controller;
-                _centerMapToUser();
+                if (_userLocation != null) {
+                  _centerMapToUser();
+                  return;
+                }
+                _centerMapToDefault();
               },
               markers: markers,
               myLocationEnabled: _userLocation != null,
