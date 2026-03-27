@@ -31,11 +31,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isLocating = false;
   bool _hasShownLocationMessage = false;
   String? _selectedOfficeId;
+  late final TextEditingController _searchController;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     _loadUserLocation();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _mapController?.dispose();
+    super.dispose();
   }
 
   Future<void> _onLocationButtonPressed() async {
@@ -237,15 +247,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _handleSearchChanged(String value) {
+    setState(() {
+      _searchQuery = value.trim();
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    if (_searchQuery.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _searchQuery = '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final AsyncValue<List<Office>> officesAsync = ref.watch(officesProvider);
-    final List<Office> officesForMap = officesAsync.maybeWhen(
+    final List<Office> sortedOffices = officesAsync.maybeWhen(
       data: _sortOfficesByDistance,
       orElse: () => <Office>[],
     );
+    final List<Office> filteredOffices = _filterOfficesBySearch(sortedOffices);
 
-    final Set<Marker> markers = _buildMapMarkers(officesForMap);
+    final Set<Marker> markers = _buildMapMarkers(filteredOffices);
 
     return Scaffold(
       body: Stack(
@@ -275,7 +303,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   HomeSearchBar(
-                    onTap: () => context.go(AppRoutes.search),
+                    controller: _searchController,
+                    onChanged: _handleSearchChanged,
+                    onClear: _clearSearch,
                   ),
                   const SizedBox(height: 12),
                   const FilterChipRow(),
@@ -288,12 +318,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             minChildSize: 0.26,
             maxChildSize: 0.82,
             builder: (BuildContext context, ScrollController scrollController) {
-              final List<Office> officesForCount = officesAsync.when(
-                data: _sortOfficesByDistance,
-                loading: () => <Office>[],
-                error: (_, __) => <Office>[],
-              );
-              final int resultsCount = officesForCount.length;
+              final int resultsCount = filteredOffices.length;
 
               return HomeBottomSheet(
                 resultsCount: resultsCount,
@@ -314,14 +339,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   data: (List<Office> offices) {
                     final List<Office> sortedOffices = _sortOfficesByDistance(offices);
+                    final List<Office> filteredOffices = _filterOfficesBySearch(sortedOffices);
 
-                    if (sortedOffices.isEmpty) {
+                    if (filteredOffices.isEmpty) {
                       return _CenteredSheetState(
                         scrollController: scrollController,
-                        child: const _MessageCard(
+                        child: _MessageCard(
                           icon: Icons.inbox_rounded,
-                          title: 'No offices available',
-                          subtitle: 'IEBC offices will appear here once data is added.',
+                          title: _searchQuery.isEmpty
+                              ? 'No offices available'
+                              : 'No offices match your search',
+                          subtitle: _searchQuery.isEmpty
+                              ? 'IEBC offices will appear here once data is added.'
+                              : 'Try another county, constituency, office location, or landmark.',
                         ),
                       );
                     }
@@ -330,7 +360,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 26),
                       itemBuilder: (BuildContext context, int index) {
-                        final Office office = sortedOffices[index];
+                        final Office office = filteredOffices[index];
                         return OfficePreviewCard(
                           office: office,
                           isSelected: office.id == _selectedOfficeId,
@@ -338,7 +368,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         );
                       },
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemCount: sortedOffices.length,
+                      itemCount: filteredOffices.length,
                     );
                   },
                 ),
@@ -393,6 +423,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
 
     return enriched;
+  }
+
+  List<Office> _filterOfficesBySearch(List<Office> offices) {
+    final String query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return offices;
+    }
+
+    return offices.where((Office office) {
+      return _matchesSearch(office.constituency, query) ||
+          _matchesSearch(office.county, query) ||
+          _matchesSearch(office.officeLocation, query) ||
+          _matchesSearch(office.landmark, query);
+    }).toList(growable: false);
+  }
+
+  bool _matchesSearch(String value, String query) {
+    if (value.isEmpty) {
+      return false;
+    }
+
+    return value.toLowerCase().contains(query);
   }
 
   Set<Marker> _buildMapMarkers(List<Office> offices) {

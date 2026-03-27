@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
 class HomeSearchBar extends StatelessWidget {
-  const HomeSearchBar({super.key, this.onTap});
+  const HomeSearchBar({
+    super.key,
+    required this.controller,
+    this.onChanged,
+    this.onClear,
+  });
 
-  final VoidCallback? onTap;
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -14,26 +21,26 @@ class HomeSearchBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       elevation: 6,
       shadowColor: colors.shadow.withValues(alpha: 0.2),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.search_rounded, color: colors.primary),
-              const SizedBox(width: 12),
-              Text(
-                'Search constituency or office',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: colors.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Icon(Icons.tune_rounded, color: colors.onSurfaceVariant),
-            ],
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        decoration: InputDecoration(
+          hintText: 'Search county, constituency, or office',
+          hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: colors.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
           ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          prefixIcon: Icon(Icons.search_rounded, color: colors.primary),
+          suffixIcon: controller.text.isEmpty
+              ? Icon(Icons.tune_rounded, color: colors.onSurfaceVariant)
+              : IconButton(
+                  tooltip: 'Clear search',
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close_rounded),
+                ),
         ),
       ),
     );
