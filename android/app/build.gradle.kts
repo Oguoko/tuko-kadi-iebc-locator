@@ -8,6 +8,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+fun mapApiKey(): String {
+    val fromGradleProperty = providers.gradleProperty("MAPS_API_KEY").orNull
+    if (!fromGradleProperty.isNullOrBlank()) {
+        return fromGradleProperty
+    }
+
+    val fromEnvironment = System.getenv("MAPS_API_KEY")
+    if (!fromEnvironment.isNullOrBlank()) {
+        return fromEnvironment
+    }
+
+    return ""
+}
+
 android {
     namespace = "com.example.tuko_kadi_iebc_locator"
     compileSdk = flutter.compileSdkVersion
@@ -31,6 +45,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["MAPS_API_KEY"] = mapApiKey()
     }
 
     buildTypes {
