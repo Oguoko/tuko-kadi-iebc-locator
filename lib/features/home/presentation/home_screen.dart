@@ -211,10 +211,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _handleMarkerTap(Office office) {
     _setSelectedOffice(office);
+    _openOfficeDetails(office);
   }
 
   void _handleCardTap(Office office) {
     _setSelectedOffice(office);
+    _openOfficeDetails(office);
+  }
+
+  void _openOfficeDetails(Office office) {
+    context.push(
+      AppRoutes.officeDetails,
+      extra: office,
+    );
   }
 
   void _moveCameraToOffice(Office office) {
