@@ -148,12 +148,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       });
       _centerMapToDefault();
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
       }
-      setState(() {
-        _isLocating = false;
-      });
     }
   }
 
@@ -517,7 +516,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     for (final Office office in offices) {
       final double? lat = office.lat;
       final double? lng = office.lng;
-      if (!_isValidCoordinate(lat, lng)) {
+      if (lat == null || lng == null || !_isValidCoordinate(lat, lng)) {
         continue;
       }
 
