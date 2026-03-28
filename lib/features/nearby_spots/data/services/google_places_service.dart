@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:tuko_kadi_iebc_locator/features/nearby_spots/domain/entities/nearby_spot.dart';
 
@@ -25,8 +26,27 @@ class GooglePlacesService {
         'Google Places API key is missing. Pass --dart-define=GOOGLE_PLACES_API_KEY=your_key.',
       );
     }
+    if (!_isValidLatitude(latitude) || !_isValidLongitude(longitude)) {
+      throw PlacesApiException(
+        'Invalid office coordinates provided (latitude: $latitude, longitude: $longitude).',
+      );
+    }
 
     final Uri uri = Uri.parse(_endpoint);
+    final Map<String, dynamic> requestBody = <String, dynamic>{
+      'includedTypes': category.includedTypes,
+      'maxResultCount': 20,
+      'rankPreference': 'DISTANCE',
+      'locationRestriction': <String, dynamic>{
+        'circle': <String, dynamic>{
+          'center': <String, double>{
+            'latitude': latitude,
+            'longitude': longitude,
+          },
+          'radius': 5000,
+        },
+      },
+    };
     final http.Response response = await _client.post(
       uri,
       headers: <String, String>{
@@ -35,23 +55,16 @@ class GooglePlacesService {
         'X-Goog-FieldMask':
             'places.id,places.displayName,places.primaryTypeDisplayName,places.types,places.rating,places.distanceMeters',
       },
-      body: jsonEncode(<String, dynamic>{
-        'includedTypes': category.includedTypes,
-        'maxResultCount': 20,
-        'rankPreference': 'DISTANCE',
-        'locationRestriction': <String, dynamic>{
-          'circle': <String, dynamic>{
-            'center': <String, double>{
-              'latitude': latitude,
-              'longitude': longitude,
-            },
-            'radius': 5000,
-          },
-        },
-      }),
+      body: jsonEncode(requestBody),
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (kDebugMode) {
+        debugPrint('Google Places nearby search failed.');
+        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Body: ${response.body}');
+        debugPrint('Request body: ${jsonEncode(requestBody)}');
+      }
       throw PlacesApiException(
         'Failed to load nearby ${category.label.toLowerCase()} (${response.statusCode}).',
       );
@@ -73,6 +86,12 @@ class GooglePlacesService {
         .where((NearbySpot spot) => spot.name.trim().isNotEmpty)
         .toList(growable: false);
   }
+
+  static bool _isValidLatitude(double value) =>
+      value.isFinite && value >= -90 && value <= 90;
+
+  static bool _isValidLongitude(double value) =>
+      value.isFinite && value >= -180 && value <= 180;
 }
 
 class PlacesApiException implements Exception {

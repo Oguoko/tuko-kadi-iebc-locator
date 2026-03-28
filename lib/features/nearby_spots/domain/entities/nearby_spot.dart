@@ -99,15 +99,15 @@ class NearbySpot {
 enum NearbySpotCategory {
   eateries(
     label: 'Eateries',
-    includedTypes: <String>['restaurant', 'meal_takeaway'],
+    includedTypes: <String>['restaurant'],
   ),
   cafes(
     label: 'Cafes',
-    includedTypes: <String>['cafe', 'coffee_shop'],
+    includedTypes: <String>['cafe'],
   ),
   chillSpots(
     label: 'Chill Spots',
-    includedTypes: <String>['park', 'tourist_attraction', 'bar'],
+    includedTypes: <String>['tourist_attraction', 'park', 'shopping_mall'],
   );
 
   const NearbySpotCategory({
