@@ -53,7 +53,7 @@ class GooglePlacesService {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': _apiKey,
         'X-Goog-FieldMask':
-            'places.id,places.displayName,places.primaryTypeDisplayName,places.types,places.rating,places.distanceMeters',
+            'places.id,places.displayName,places.primaryType,places.types,places.rating,places.formattedAddress,places.location',
       },
       body: jsonEncode(requestBody),
     );
