@@ -41,6 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _selectedOfficeId;
   final Set<String> _invalidMarkerLogIds = <String>{};
   late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
   String _searchQuery = '';
   _LocationIssue? _locationIssue;
 
@@ -48,12 +49,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
     _loadUserLocation();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _mapController?.dispose();
     super.dispose();
   }
@@ -241,13 +244,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _clearSearch() {
     _searchController.clear();
-    if (_searchQuery.isEmpty) {
-      return;
-    }
-
     setState(() {
       _searchQuery = '';
+      _selectedOfficeId = null;
     });
+  }
+
+  void _applySuggestion(String suggestion, List<Office> offices) {
+    _searchController.value = TextEditingValue(
+      text: suggestion,
+      selection: TextSelection.collapsed(offset: suggestion.length),
+    );
+
+    final Office? matchedOffice = _firstOfficeForSuggestion(suggestion, offices);
+
+    setState(() {
+      _searchQuery = suggestion.trim();
+      _selectedOfficeId = matchedOffice?.id;
+    });
+
+    _searchFocusNode.unfocus();
+
+    if (matchedOffice != null) {
+      _moveCameraToOffice(matchedOffice);
+    }
   }
 
   _LocationCopy _locationCopyForIssue(_LocationIssue issue) {
@@ -287,6 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       orElse: () => <Office>[],
     );
     final List<Office> filteredOffices = _filterOfficesBySearch(sortedOffices);
+    final List<String> suggestions = _buildSuggestions(sortedOffices);
 
     final Set<Marker> markers = _buildMapMarkers(filteredOffices);
     final bool mapBusy = officesAsync.isLoading || (_isLocating && !_isLocationReady);
@@ -328,6 +349,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: <Widget>[
                   HomeSearchBar(
                     controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    suggestions: suggestions,
+                    onSuggestionTap: (String suggestion) =>
+                        _applySuggestion(suggestion, sortedOffices),
                     onChanged: _handleSearchChanged,
                     onClear: _clearSearch,
                   ),
@@ -512,6 +537,87 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     return value.toLowerCase().contains(query);
+  }
+
+  List<String> _buildSuggestions(List<Office> offices) {
+    final String query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) {
+      return const <String>[];
+    }
+
+    final Map<String, String> uniqueSuggestions = <String, String>{};
+
+    for (final Office office in offices) {
+      for (final String value in <String>[
+        office.constituency,
+        office.county,
+        office.officeLocation,
+        office.landmark,
+      ]) {
+        final String cleaned = value.trim();
+        if (cleaned.isEmpty) {
+          continue;
+        }
+
+        final String normalized = cleaned.toLowerCase();
+        if (!normalized.contains(query)) {
+          continue;
+        }
+
+        uniqueSuggestions.putIfAbsent(normalized, () => cleaned);
+      }
+    }
+
+    final List<String> suggestions = uniqueSuggestions.values.toList(growable: false);
+    suggestions.sort((String a, String b) {
+      final String normalizedA = a.toLowerCase();
+      final String normalizedB = b.toLowerCase();
+      final bool aStartsWith = normalizedA.startsWith(query);
+      final bool bStartsWith = normalizedB.startsWith(query);
+
+      if (aStartsWith != bStartsWith) {
+        return aStartsWith ? -1 : 1;
+      }
+
+      return normalizedA.compareTo(normalizedB);
+    });
+
+    return suggestions.take(8).toList(growable: false);
+  }
+
+  Office? _firstOfficeForSuggestion(String suggestion, List<Office> offices) {
+    final String normalizedSuggestion = suggestion.trim().toLowerCase();
+    if (normalizedSuggestion.isEmpty) {
+      return null;
+    }
+
+    Office? containsMatch;
+
+    for (final Office office in offices) {
+      final List<String> values = <String>[
+        office.constituency,
+        office.county,
+        office.officeLocation,
+        office.landmark,
+      ];
+
+      for (final String value in values) {
+        final String normalized = value.trim().toLowerCase();
+        if (normalized.isEmpty) {
+          continue;
+        }
+
+        if (normalized == normalizedSuggestion) {
+          return office;
+        }
+
+        if (containsMatch == null && normalized.contains(normalizedSuggestion)) {
+          containsMatch = office;
+        }
+      }
+    }
+
+    return containsMatch;
   }
 
   Set<Marker> _buildMapMarkers(List<Office> offices) {
