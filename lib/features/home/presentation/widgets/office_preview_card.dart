@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
-import 'package:tuko_kadi_iebc_locator/shared/utils/google_maps_directions.dart';
+import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
 
 class OfficePreviewCard extends StatelessWidget {
   const OfficePreviewCard({
@@ -10,18 +10,20 @@ class OfficePreviewCard extends StatelessWidget {
     required this.office,
     this.isSelected = false,
     this.onTap,
+    this.directionsService = const DirectionsService(),
   });
 
   final Office office;
   final bool isSelected;
   final VoidCallback? onTap;
+  final DirectionsService directionsService;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final Color selectedBorderColor = colors.primary;
     final Color selectedCardColor = colors.primaryContainer.withValues(alpha: 0.3);
-    final bool canOpenDirections = GoogleMapsDirections.hasValidCoordinates(
+    final bool canOpenDirections = directionsService.hasValidDestination(
       office.lat,
       office.lng,
     );
@@ -109,17 +111,17 @@ class OfficePreviewCard extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: canOpenDirections
                           ? () async {
-                              final bool launched =
-                                  await GoogleMapsDirections.openDirections(
-                                lat: office.lat!,
-                                lng: office.lng!,
+                              final DirectionsResult result =
+                                  await directionsService.openDirections(
+                                lat: office.lat,
+                                lng: office.lng,
                               );
 
-                              if (!launched && context.mounted) {
+                              if (!result.isSuccess && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
-                                      'Unable to open Google Maps directions.',
+                                      _directionsErrorMessage(result.failure),
                                     ),
                                   ),
                                 );
@@ -157,5 +159,17 @@ class OfficePreviewCard extends StatelessWidget {
         child: cardContent,
       ),
     );
+  }
+
+  String _directionsErrorMessage(DirectionsFailure? failure) {
+    switch (failure) {
+      case DirectionsFailure.invalidCoordinates:
+        return 'Directions unavailable: office coordinates are missing or invalid.';
+      case DirectionsFailure.unsupportedFlow:
+        return 'In-app route preview is not available yet.';
+      case DirectionsFailure.unableToLaunch:
+      case null:
+        return 'Unable to open Google Maps directions.';
+    }
   }
 }
