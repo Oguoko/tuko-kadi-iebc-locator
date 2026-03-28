@@ -227,12 +227,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _moveCameraToOffice(Office office) {
-    if (!OfficeCoordinateValidator.isValidOfficeCoordinate(office.lat, office.lng)) {
+    final double? lat = office.lat;
+    final double? lng = office.lng;
+    if (lat == null || lng == null) {
+      return;
+    }
+
+    if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
       return;
     }
 
     _updateCamera(
-      target: LatLng(office.lat!, office.lng!),
+      target: LatLng(lat, lng),
       zoom: 13,
     );
   }
@@ -512,15 +518,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final List<Office> enriched = offices.map((Office office) {
-      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(office.lat, office.lng)) {
+      final double? lat = office.lat;
+      final double? lng = office.lng;
+      if (lat == null || lng == null) {
+        return office;
+      }
+
+      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
         return office;
       }
 
       final double distance = DistanceUtils.calculateDistanceMeters(
         startLatitude: userLocation.latitude,
         startLongitude: userLocation.longitude,
-        endLatitude: office.lat!,
-        endLongitude: office.lng!,
+        endLatitude: lat,
+        endLongitude: lng,
       );
 
       return office.copyWith(distanceMeters: distance);
@@ -643,11 +655,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     for (final Office office in offices) {
       final double? lat = office.lat;
       final double? lng = office.lng;
-      final bool hasValidCoordinates =
-          lat != null &&
-          lng != null &&
-          OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng);
-      if (!hasValidCoordinates) {
+      if (lat == null || lng == null) {
+        _logInvalidOfficeCoordinates(office);
+        continue;
+      }
+
+      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
         _logInvalidOfficeCoordinates(office);
         continue;
       }
