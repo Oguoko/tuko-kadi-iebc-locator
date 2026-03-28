@@ -1,12 +1,9 @@
+import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 abstract final class GoogleMapsDirections {
   static bool hasValidCoordinates(double? lat, double? lng) {
-    if (lat == null || lng == null) {
-      return false;
-    }
-
-    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    return OfficeCoordinateValidator.hasValidWorldBounds(lat, lng);
   }
 
   static Uri directionsUri({required double lat, required double lng}) {
