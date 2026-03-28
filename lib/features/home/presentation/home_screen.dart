@@ -643,7 +643,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     for (final Office office in offices) {
       final double? lat = office.lat;
       final double? lng = office.lng;
-      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
+      final bool hasValidCoordinates =
+          lat != null &&
+          lng != null &&
+          OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng);
+      if (!hasValidCoordinates) {
         _logInvalidOfficeCoordinates(office);
         continue;
       }
@@ -745,8 +749,8 @@ class _CardsLoadingState extends StatelessWidget {
     return ListView.separated(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 22),
-      itemBuilder: (_, __) => const _OfficeCardSkeleton(),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, _) => const _OfficeCardSkeleton(),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemCount: 4,
     );
   }
