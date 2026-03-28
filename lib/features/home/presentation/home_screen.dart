@@ -12,6 +12,7 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_b
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_search_bar.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office_preview_card.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
+import 'package:tuko_kadi_iebc_locator/shared/widgets/tuko_kadi_brand_lockup.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -347,6 +348,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/branding/icon.png',
+                          width: 34,
+                          height: 34,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const TukoKadiBrandLockup(showSubTitle: true),
+                      const Spacer(),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   HomeSearchBar(
                     controller: _searchController,
                     focusNode: _searchFocusNode,

@@ -27,9 +27,9 @@ class HomeSearchBar extends StatelessWidget {
       children: <Widget>[
         Material(
           color: colors.surface,
-          borderRadius: BorderRadius.circular(18),
-          elevation: 7,
-          shadowColor: colors.shadow.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(10),
+          elevation: 2,
+          shadowColor: colors.shadow.withValues(alpha: 0.1),
           child: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
             builder: (BuildContext context, TextEditingValue value, _) {
@@ -40,14 +40,10 @@ class HomeSearchBar extends StatelessWidget {
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   hintText: 'Search county, constituency, or office',
-                  hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
                   border: InputBorder.none,
                   contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                  prefixIcon: Icon(Icons.search_rounded, color: colors.primary),
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  prefixIcon: Icon(Icons.search_rounded, color: colors.onSurface),
                   suffixIcon: value.text.trim().isEmpty
                       ? Icon(Icons.tune_rounded, color: colors.onSurfaceVariant)
                       : IconButton(
@@ -69,9 +65,8 @@ class HomeSearchBar extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8),
                   child: Material(
                     color: colors.surface,
-                    borderRadius: BorderRadius.circular(14),
-                    elevation: 5,
-                    shadowColor: colors.shadow.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(10),
+                    elevation: 1,
                     child: ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),

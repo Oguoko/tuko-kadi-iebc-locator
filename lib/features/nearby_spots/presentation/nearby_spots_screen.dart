@@ -61,7 +61,15 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
     final bool hasCoordinates = office?.lat != null && office?.lng != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nearby Spots')),
+      appBar: AppBar(
+        title: Row(
+          children: <Widget>[
+            Image.asset('assets/branding/logo.png', height: 24),
+            const SizedBox(width: 8),
+            const Text('Nearby Spots'),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -147,11 +155,19 @@ class _NearbySpotCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              spot.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+            Row(
+              children: <Widget>[
+                Image.asset('assets/branding/icon.png', width: 16, height: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    spot.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text('Type: ${spot.primaryType}'),
@@ -195,7 +211,7 @@ class _InfoState extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
             ),
             const SizedBox(height: 8),
