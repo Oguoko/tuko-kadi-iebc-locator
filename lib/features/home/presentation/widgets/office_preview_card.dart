@@ -34,8 +34,9 @@ class OfficePreviewCard extends StatelessWidget {
       child: Card(
         margin: EdgeInsets.zero,
         color: isSelected ? selectedCardColor : colors.surface,
+        elevation: isSelected ? 1 : 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: isSelected ? selectedBorderColor : colors.outlineVariant,
             width: isSelected ? 2 : 1,
@@ -53,12 +54,27 @@ class OfficePreviewCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(
-                          office.constituency,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.1,
+                        Row(
+                          children: <Widget>[
+                            Image.asset(
+                              'assets/branding/icon.png',
+                              width: 18,
+                              height: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                office.constituency,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.1,
+                                    ),
                               ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -154,7 +170,7 @@ class OfficePreviewCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: cardContent,
       ),

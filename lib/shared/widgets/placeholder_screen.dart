@@ -17,13 +17,27 @@ class PlaceholderScreen extends StatelessWidget {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Row(
+          children: <Widget>[
+            Image.asset('assets/branding/logo.png', height: 24),
+            const SizedBox(width: 8),
+            Text(title),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(title, style: textTheme.headlineSmall),
+            Row(
+              children: <Widget>[
+                Image.asset('assets/branding/icon.png', width: 18, height: 18),
+                const SizedBox(width: 8),
+                Text(title, style: textTheme.headlineSmall),
+              ],
+            ),
             const SizedBox(height: 12),
             Text(description, style: textTheme.bodyLarge),
             if (child != null) ...<Widget>[

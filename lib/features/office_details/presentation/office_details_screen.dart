@@ -25,7 +25,15 @@ class OfficeDetailsScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Office Details')),
+      appBar: AppBar(
+        title: Row(
+          children: <Widget>[
+            Image.asset('assets/branding/logo.png', height: 24),
+            const SizedBox(width: 8),
+            const Text('Office Details'),
+          ],
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -36,8 +44,8 @@ class OfficeDetailsScreen extends StatelessWidget {
                     Text(
                       currentOffice.constituency,
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     _InfoCard(
@@ -127,8 +135,8 @@ class OfficeDetailsScreen extends StatelessWidget {
                       Text(
                         'Directions unavailable: office coordinates are missing or invalid.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                       ),
                     ],
                   ],
@@ -163,9 +171,7 @@ class _InfoCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
@@ -199,9 +205,9 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
+                    color: colors.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ),
           const SizedBox(width: 8),
@@ -237,8 +243,8 @@ class _NoOfficeSelectedState extends StatelessWidget {
               Text(
                 'No office selected',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
               const SizedBox(height: 8),
               Text(
