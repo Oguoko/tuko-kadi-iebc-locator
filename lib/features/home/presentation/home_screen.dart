@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,6 +12,7 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_b
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/home_search_bar.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/presentation/widgets/office_preview_card.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
+import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -37,6 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isLocationReady = false;
   bool _isLocating = false;
   String? _selectedOfficeId;
+  final Set<String> _invalidMarkerLogIds = <String>{};
   late final TextEditingController _searchController;
   String _searchQuery = '';
   _LocationIssue? _locationIssue;
@@ -220,7 +223,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _moveCameraToOffice(Office office) {
-    if (!_isValidCoordinate(office.lat, office.lng)) {
+    if (!OfficeCoordinateValidator.isValidOfficeCoordinate(office.lat, office.lng)) {
       return;
     }
 
@@ -466,7 +469,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final List<Office> enriched = offices.map((Office office) {
-      if (!_isValidCoordinate(office.lat, office.lng)) {
+      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(office.lat, office.lng)) {
         return office;
       }
 
@@ -516,7 +519,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     for (final Office office in offices) {
       final double? lat = office.lat;
       final double? lng = office.lng;
-      if (lat == null || lng == null || !_isValidCoordinate(lat, lng)) {
+      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
+        _logInvalidOfficeCoordinates(office);
         continue;
       }
 
@@ -559,12 +563,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return markers;
   }
 
-  bool _isValidCoordinate(double? lat, double? lng) {
-    if (lat == null || lng == null) {
-      return false;
+  void _logInvalidOfficeCoordinates(Office office) {
+    if (!kDebugMode || _invalidMarkerLogIds.contains(office.id)) {
+      return;
     }
 
-    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    _invalidMarkerLogIds.add(office.id);
+    debugPrint(
+      'Skipping office marker due to invalid Kenya coordinates '
+      '[id=${office.id}, constituency=${office.constituency}, lat=${office.lat}, lng=${office.lng}]',
+    );
   }
 
   String _buildInfoSnippet({required String county, required String landmark}) {
