@@ -43,8 +43,6 @@ class NearbySpot {
   }
 
   factory NearbySpot.fromPlacesJson(Map<String, dynamic> json) {
-    final Map<String, dynamic>? primaryTypeDisplayName =
-        _asStringMap(json['primaryTypeDisplayName']);
     final Map<String, dynamic>? displayName = _asStringMap(json['displayName']);
     final Map<String, dynamic>? location = _asStringMap(json['location']);
 
@@ -58,7 +56,7 @@ class NearbySpot {
     return NearbySpot(
       id: _asString(json['id']),
       name: _asString(displayName?['text']),
-      primaryType: _resolvePrimaryType(primaryTypeDisplayName, json['types']),
+      primaryType: _resolvePrimaryType(json['primaryType'], json['types']),
       rating: _asDouble(json['rating']),
       distanceMeters: _asDouble(json['distanceMeters']),
       latitude: _asDouble(location?['latitude']),
@@ -68,10 +66,10 @@ class NearbySpot {
   }
 
   static String _resolvePrimaryType(
-    Map<String, dynamic>? primaryTypeDisplayName,
+    Object? primaryType,
     Object? types,
   ) {
-    final String primary = _asString(primaryTypeDisplayName?['text']);
+    final String primary = _asString(primaryType);
     if (primary.isNotEmpty) {
       return primary;
     }
