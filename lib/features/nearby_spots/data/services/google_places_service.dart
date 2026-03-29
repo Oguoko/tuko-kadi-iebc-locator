@@ -16,6 +16,14 @@ class GooglePlacesService {
   final http.Client _client;
   final String _apiKey;
 
+  String? buildPhotoUrl(String? photoReference) {
+    if (_apiKey.isEmpty || photoReference == null || photoReference.trim().isEmpty) {
+      return null;
+    }
+
+    return 'https://places.googleapis.com/v1/$photoReference/media?maxHeightPx=420&maxWidthPx=420&key=$_apiKey';
+  }
+
   Future<List<NearbySpot>> fetchNearbySpots({
     required double latitude,
     required double longitude,
@@ -53,7 +61,7 @@ class GooglePlacesService {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': _apiKey,
         'X-Goog-FieldMask':
-            'places.id,places.displayName,places.primaryType,places.types,places.rating,places.formattedAddress,places.location',
+            'places.id,places.displayName,places.primaryTypeDisplayName,places.types,places.rating,places.location,places.photos.name,places.distanceMeters',
       },
       body: jsonEncode(requestBody),
     );
