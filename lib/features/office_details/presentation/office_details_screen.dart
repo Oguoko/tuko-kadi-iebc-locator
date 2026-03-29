@@ -28,6 +28,7 @@ class OfficeDetailsScreen extends StatefulWidget {
 class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
   RoutePreviewData? _routePreview;
   LatLng? _originLatLng;
+  String? _routePreviewDebugError;
   bool _isRouteLoading = false;
 
   @override
@@ -76,9 +77,29 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       setState(() {
         _originLatLng = LatLng(position.latitude, position.longitude);
         _routePreview = preview;
+        _routePreviewDebugError = null;
       });
-    } catch (_) {
-      // Route preview is best-effort in phase one; external maps remains fallback.
+    } on RoutesApiException catch (error) {
+      if (kDebugMode) {
+        debugPrint('Route preview failed: ${error.message}');
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _routePreviewDebugError = error.message;
+      });
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('Unexpected route preview failure: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _routePreviewDebugError = 'Unexpected route preview error: $error';
+      });
     } finally {
       if (!mounted) {
         return;
@@ -124,6 +145,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 canOpenDirections: canOpenDirections,
                 directionsService: widget.directionsService,
                 routePreview: _routePreview,
+                routePreviewDebugError: _routePreviewDebugError,
                 isRouteLoading: _isRouteLoading,
               ),
               if (!canOpenDirections) ...<Widget>[
@@ -591,6 +613,7 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.canOpenDirections,
     required this.directionsService,
     required this.routePreview,
+    required this.routePreviewDebugError,
     required this.isRouteLoading,
   });
 
@@ -598,6 +621,7 @@ class _PrimaryActionRow extends StatelessWidget {
   final bool canOpenDirections;
   final DirectionsService directionsService;
   final RoutePreviewData? routePreview;
+  final String? routePreviewDebugError;
   final bool isRouteLoading;
 
   @override
@@ -608,6 +632,7 @@ class _PrimaryActionRow extends StatelessWidget {
       children: <Widget>[
         _RouteSummaryCard(
           routePreview: routePreview,
+          routePreviewDebugError: routePreviewDebugError,
           isRouteLoading: isRouteLoading,
         ),
         const SizedBox(height: 9),
@@ -731,10 +756,12 @@ class _PrimaryActionRow extends StatelessWidget {
 class _RouteSummaryCard extends StatelessWidget {
   const _RouteSummaryCard({
     required this.routePreview,
+    required this.routePreviewDebugError,
     required this.isRouteLoading,
   });
 
   final RoutePreviewData? routePreview;
+  final String? routePreviewDebugError;
   final bool isRouteLoading;
 
   @override
@@ -796,6 +823,16 @@ class _RouteSummaryCard extends StatelessWidget {
               'Loading live route preview...',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+          if (kDebugMode && routePreviewDebugError != null && routePreviewDebugError!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              'Developer debug: $routePreviewDebugError',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.deepOrange.shade700,
+                    fontWeight: FontWeight.w600,
                   ),
             ),
           ],
