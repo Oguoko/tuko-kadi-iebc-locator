@@ -354,21 +354,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          'assets/branding/icon.png',
-                          width: 34,
-                          height: 34,
-                          fit: BoxFit.cover,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
                       ),
-                      const SizedBox(width: 10),
-                      const TukoKadiBrandLockup(showSubTitle: true),
-                      const Spacer(),
-                    ],
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/branding/splash_logo.png',
+                              width: 22,
+                              height: 22,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: TukoKadiBrandLockup(
+                            showSubTitle: true,
+                            compact: true,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   HomeSearchBar(

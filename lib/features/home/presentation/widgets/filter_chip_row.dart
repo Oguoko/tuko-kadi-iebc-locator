@@ -6,7 +6,7 @@ class FilterChipRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 42,
+      height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: const <Widget>[
@@ -42,22 +42,26 @@ class _HomeFilterChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) {},
       showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       avatar: Icon(
         icon,
-        size: 16,
+        size: 15,
         color: selected ? colors.onPrimary : colors.onSurface,
       ),
       label: Text(label),
       selectedColor: colors.primary,
-      side: BorderSide(color: selected ? colors.primary : colors.outlineVariant),
+      side: BorderSide(
+        color: selected ? colors.primary : colors.outline,
+        width: selected ? 1.4 : 1,
+      ),
       labelStyle: TextStyle(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.1,
         color: selected ? colors.onPrimary : colors.onSurface,
       ),
       backgroundColor: colors.surface,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }

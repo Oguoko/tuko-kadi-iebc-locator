@@ -21,29 +21,30 @@ class OfficePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final Color selectedBorderColor = colors.primary;
-    final Color selectedCardColor = colors.primaryContainer.withValues(alpha: 0.3);
     final bool canOpenDirections = directionsService.hasValidDestination(
       office.lat,
       office.lng,
     );
+
+    final Color cardColor = isSelected ? colors.primaryContainer : colors.surface;
+    final Color borderColor = isSelected ? colors.primary : colors.outlineVariant;
 
     final Widget cardContent = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       child: Card(
         margin: EdgeInsets.zero,
-        color: isSelected ? selectedCardColor : colors.surface,
-        elevation: isSelected ? 1 : 0,
+        color: cardColor,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           side: BorderSide(
-            color: isSelected ? selectedBorderColor : colors.outlineVariant,
-            width: isSelected ? 2 : 1,
+            color: borderColor,
+            width: isSelected ? 1.8 : 1,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -56,12 +57,20 @@ class OfficePreviewCard extends StatelessWidget {
                       children: <Widget>[
                         Row(
                           children: <Widget>[
-                            Image.asset(
-                              'assets/branding/icon.png',
-                              width: 18,
-                              height: 18,
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: colors.surface,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: colors.outlineVariant),
+                              ),
+                              child: Image.asset(
+                                'assets/branding/icon.png',
+                                width: 14,
+                                height: 14,
+                              ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 office.constituency,
@@ -69,19 +78,19 @@ class OfficePreviewCard extends StatelessWidget {
                                     .textTheme
                                     .titleMedium
                                     ?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.1,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.2,
                                     ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Text(
                           office.county,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: colors.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                         ),
                       ],
@@ -90,15 +99,16 @@ class OfficePreviewCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(999),
+                      color: colors.secondary,
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                     child: Text(
                       office.distanceLabel,
                       style: TextStyle(
-                        color: colors.onPrimaryContainer,
-                        fontWeight: FontWeight.w700,
+                        color: colors.onSecondary,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -115,12 +125,13 @@ class OfficePreviewCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: colors.onSurfaceVariant,
                             height: 1.3,
+                            fontWeight: FontWeight.w500,
                           ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Row(
                 children: <Widget>[
                   Expanded(
@@ -146,17 +157,24 @@ class OfficePreviewCard extends StatelessWidget {
                           : null,
                       icon: const Icon(Icons.directions_rounded, size: 18),
                       label: const Text('Directions'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => context.go(
                         AppRoutes.nearbySpots,
                         extra: office,
                       ),
-                      icon: const Icon(Icons.local_activity_rounded, size: 18),
-                      label: const Text('Nearby Spots'),
+                      icon: const Icon(Icons.local_activity_rounded, size: 17),
+                      label: const Text('Nearby'),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colors.secondary, width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
                     ),
                   ),
                 ],
@@ -170,7 +188,7 @@ class OfficePreviewCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: cardContent,
       ),
