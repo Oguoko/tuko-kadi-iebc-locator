@@ -51,7 +51,7 @@ class GooglePlacesService {
             'latitude': latitude,
             'longitude': longitude,
           },
-          'radius': 5000,
+          'radius': 5000.0,
         },
       },
     };
@@ -61,7 +61,7 @@ class GooglePlacesService {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': _apiKey,
         'X-Goog-FieldMask':
-            'places.id,places.displayName,places.primaryTypeDisplayName,places.types,places.rating,places.location,places.photos.name,places.distanceMeters',
+            'places.id,places.displayName,places.primaryType,places.types,places.rating,places.formattedAddress,places.location',
       },
       body: jsonEncode(requestBody),
     );
@@ -70,8 +70,9 @@ class GooglePlacesService {
       if (kDebugMode) {
         debugPrint('Google Places nearby search failed.');
         debugPrint('Status: ${response.statusCode}');
-        debugPrint('Body: ${response.body}');
+        debugPrint('Endpoint: $uri');
         debugPrint('Request body: ${jsonEncode(requestBody)}');
+        debugPrint('Response body: ${response.body}');
       }
       throw PlacesApiException(
         'Failed to load nearby ${category.label.toLowerCase()} (${response.statusCode}).',

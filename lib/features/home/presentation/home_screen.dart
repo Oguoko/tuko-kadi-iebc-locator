@@ -36,6 +36,7 @@ enum _LocationIssue {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   GoogleMapController? _mapController;
+  bool _isMapReady = false;
   LatLng? _userLocation;
   bool _isLocationReady = false;
   bool _isLocating = false;
@@ -58,7 +59,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
-    _mapController?.dispose();
+    _isMapReady = false;
+    _mapController = null;
     super.dispose();
   }
 
@@ -187,19 +189,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required LatLng target,
     required double zoom,
   }) {
+    if (!mounted || !_isMapReady) {
+      return;
+    }
+
     final GoogleMapController? controller = _mapController;
     if (controller == null) {
       return;
     }
 
-    controller.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: target,
-          zoom: zoom,
-        ),
-      ),
-    );
+    controller
+        .animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: target,
+              zoom: zoom,
+            ),
+          ),
+        )
+        .catchError((Object error) {
+      if (kDebugMode) {
+        debugPrint('Map camera update skipped: $error');
+      }
+    });
   }
 
   void _setSelectedOffice(Office office) {
@@ -326,7 +338,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: GoogleMap(
               initialCameraPosition: HomeScreen._defaultNairobiCamera,
               onMapCreated: (GoogleMapController controller) {
+                if (!mounted) {
+                  return;
+                }
+
                 _mapController = controller;
+                _isMapReady = true;
                 if (_userLocation != null) {
                   _centerMapToUser();
                   return;
