@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/theme/app_theme.dart';
+import 'package:tuko_kadi_iebc_locator/shared/widgets/tuko_kadi_brand_lockup.dart';
 
 class TukoKadiApp extends StatefulWidget {
   const TukoKadiApp({super.key});
@@ -93,18 +94,52 @@ class _StartupSplashState extends State<_StartupSplash>
 
     return ColoredBox(
       color: AppTheme.offWhite,
-      child: Center(
-        child: FadeTransition(
-          opacity: fade,
-          child: SlideTransition(
-            position: slide,
-            child: Image.asset(
-              'assets/branding/splash_logo.png',
-              width: 190,
-              fit: BoxFit.contain,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              height: 170,
+              color: AppTheme.black,
             ),
           ),
-        ),
+          Center(
+            child: FadeTransition(
+              opacity: fade,
+              child: SlideTransition(
+                position: slide,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFD9D3CB)),
+                    boxShadow: const <BoxShadow>[
+                      BoxShadow(
+                        color: Color(0x29000000),
+                        blurRadius: 20,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Image.asset(
+                        'assets/branding/splash_logo.png',
+                        width: 44,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(width: 10),
+                      const TukoKadiBrandLockup(textScale: 1.05),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

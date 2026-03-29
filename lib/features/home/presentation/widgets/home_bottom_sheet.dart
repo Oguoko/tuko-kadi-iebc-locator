@@ -17,57 +17,60 @@ class HomeBottomSheet extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: colors.outlineVariant)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        border: Border(
+          top: BorderSide(color: colors.outlineVariant),
+        ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: colors.shadow.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
+            color: colors.shadow.withValues(alpha: 0.14),
+            blurRadius: 14,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
       child: Column(
         children: <Widget>[
-          const SizedBox(height: 10),
+          const SizedBox(height: 9),
           Container(
-            width: 40,
+            width: 42,
             height: 4,
             decoration: BoxDecoration(
               color: colors.outline,
-              borderRadius: BorderRadius.circular(99),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Row(
               children: <Widget>[
                 Expanded(
                   child: Text(
                     'Nearby IEBC offices',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                         ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(999),
+                    color: colors.secondary,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     '$resultsCount results',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: colors.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
+                          color: colors.onSecondary,
+                          fontWeight: FontWeight.w800,
                         ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Expanded(child: child),
         ],
       ),
