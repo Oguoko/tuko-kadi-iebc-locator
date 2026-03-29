@@ -29,6 +29,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
   RoutePreviewData? _routePreview;
   LatLng? _originLatLng;
   bool _isRouteLoading = false;
+  DirectionsFlow _selectedDirectionsFlow = DirectionsFlow.inAppPreview;
 
   @override
   void initState() {
@@ -116,20 +117,22 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 office: currentOffice,
                 routePreview: _routePreview,
                 originLatLng: _originLatLng,
+                isRouteLoading: _isRouteLoading,
               ),
               const SizedBox(height: 18),
               _PrimaryActionRow(
                 office: currentOffice,
                 canOpenDirections: canOpenDirections,
                 directionsService: widget.directionsService,
+                routePreview: _routePreview,
+                isRouteLoading: _isRouteLoading,
+                selectedDirectionsFlow: _selectedDirectionsFlow,
+                onDirectionsFlowChanged: (DirectionsFlow flow) {
+                  setState(() {
+                    _selectedDirectionsFlow = flow;
+                  });
+                },
               ),
-              if (_isRouteLoading) ...<Widget>[
-                const SizedBox(height: 10),
-                const Text('Loading route preview...'),
-              ] else if (_routePreview != null) ...<Widget>[
-                const SizedBox(height: 10),
-                _RouteSummaryCard(routePreview: _routePreview!),
-              ],
               if (!canOpenDirections) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(
@@ -211,11 +214,13 @@ class _EditorialHero extends StatelessWidget {
     required this.office,
     required this.routePreview,
     required this.originLatLng,
+    required this.isRouteLoading,
   });
 
   final Office office;
   final RoutePreviewData? routePreview;
   final LatLng? originLatLng;
+  final bool isRouteLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +244,7 @@ class _EditorialHero extends StatelessWidget {
               office: office,
               routePreview: routePreview,
               originLatLng: originLatLng,
+              isRouteLoading: isRouteLoading,
             ),
             const SizedBox(height: 12),
             _HeroMetaPanel(office: office),
@@ -249,20 +255,41 @@ class _EditorialHero extends StatelessWidget {
   }
 }
 
-class _MapHero extends StatelessWidget {
+class _MapHero extends StatefulWidget {
   const _MapHero({
     required this.office,
     required this.routePreview,
     required this.originLatLng,
+    required this.isRouteLoading,
   });
 
   final Office office;
   final RoutePreviewData? routePreview;
   final LatLng? originLatLng;
+  final bool isRouteLoading;
+
+  @override
+  State<_MapHero> createState() => _MapHeroState();
+}
+
+class _MapHeroState extends State<_MapHero> {
+  GoogleMapController? _mapController;
+  bool _hasAppliedRouteFit = false;
+
+  @override
+  void didUpdateWidget(covariant _MapHero oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final bool pointsChanged = oldWidget.routePreview?.points.length != widget.routePreview?.points.length;
+    final bool originChanged = oldWidget.originLatLng != widget.originLatLng;
+    if (pointsChanged || originChanged) {
+      _hasAppliedRouteFit = false;
+      _fitRouteBoundsIfPossible();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasCoordinates = office.lat != null && office.lng != null;
+    final bool hasCoordinates = widget.office.lat != null && widget.office.lng != null;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -274,33 +301,37 @@ class _MapHero extends StatelessWidget {
               child: hasCoordinates
                   ? GoogleMap(
                       initialCameraPosition: CameraPosition(
-                        target: LatLng(office.lat!, office.lng!),
+                        target: LatLng(widget.office.lat!, widget.office.lng!),
                         zoom: 14.4,
                       ),
+                      onMapCreated: (GoogleMapController controller) {
+                        _mapController = controller;
+                        _fitRouteBoundsIfPossible();
+                      },
                       mapToolbarEnabled: false,
                       zoomControlsEnabled: false,
                       myLocationButtonEnabled: false,
                       markers: <Marker>{
-                        if (originLatLng != null)
+                        if (widget.originLatLng != null)
                           Marker(
                             markerId: const MarkerId('route-origin'),
-                            position: originLatLng!,
+                            position: widget.originLatLng!,
                             infoWindow: const InfoWindow(title: 'Your location'),
                             icon: BitmapDescriptor.defaultMarkerWithHue(
                               BitmapDescriptor.hueAzure,
                             ),
                           ),
                         Marker(
-                          markerId: MarkerId(office.id),
-                          position: LatLng(office.lat!, office.lng!),
-                          infoWindow: InfoWindow(title: office.constituency),
+                          markerId: MarkerId(widget.office.id),
+                          position: LatLng(widget.office.lat!, widget.office.lng!),
+                          infoWindow: InfoWindow(title: widget.office.constituency),
                         ),
                       },
                       polylines: <Polyline>{
-                        if ((routePreview?.points.length ?? 0) > 1)
+                        if ((widget.routePreview?.points.length ?? 0) > 1)
                           Polyline(
                             polylineId: const PolylineId('office-preview-route'),
-                            points: routePreview!.points,
+                            points: widget.routePreview!.points,
                             color: AppTheme.red,
                             width: 5,
                           ),
@@ -368,7 +399,7 @@ class _MapHero extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    office.officeLocation,
+                    widget.office.officeLocation,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -381,16 +412,83 @@ class _MapHero extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     DistanceUtils.formatDistanceLabel(
-                      office.distanceMeters,
-                      fallback: office.estimatedDistanceText ?? 'Distance unavailable',
+                      widget.office.distanceMeters,
+                      fallback: widget.office.estimatedDistanceText ?? 'Distance unavailable',
                     ),
                     style: const TextStyle(color: Colors.white70),
                   ),
                 ],
               ),
             ),
+            if (widget.isRouteLoading)
+              const Positioned(
+                right: 14,
+                top: 14,
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _fitRouteBoundsIfPossible() async {
+    if (_hasAppliedRouteFit) {
+      return;
+    }
+    final GoogleMapController? controller = _mapController;
+    final double? lat = widget.office.lat;
+    final double? lng = widget.office.lng;
+    if (controller == null || lat == null || lng == null) {
+      return;
+    }
+
+    final List<LatLng> routePoints = widget.routePreview?.points ?? <LatLng>[];
+    final List<LatLng> pointsForBounds = <LatLng>[
+      if (widget.originLatLng != null) widget.originLatLng!,
+      ...routePoints,
+      LatLng(lat, lng),
+    ];
+    if (pointsForBounds.length < 2) {
+      return;
+    }
+
+    double minLat = pointsForBounds.first.latitude;
+    double maxLat = pointsForBounds.first.latitude;
+    double minLng = pointsForBounds.first.longitude;
+    double maxLng = pointsForBounds.first.longitude;
+
+    for (final LatLng point in pointsForBounds.skip(1)) {
+      minLat = point.latitude < minLat ? point.latitude : minLat;
+      maxLat = point.latitude > maxLat ? point.latitude : maxLat;
+      minLng = point.longitude < minLng ? point.longitude : minLng;
+      maxLng = point.longitude > maxLng ? point.longitude : maxLng;
+    }
+
+    if ((maxLat - minLat).abs() < 0.00005) {
+      minLat -= 0.0015;
+      maxLat += 0.0015;
+    }
+    if ((maxLng - minLng).abs() < 0.00005) {
+      minLng -= 0.0015;
+      maxLng += 0.0015;
+    }
+
+    _hasAppliedRouteFit = true;
+    await controller.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(minLat, minLng),
+          northeast: LatLng(maxLat, maxLng),
+        ),
+        58,
       ),
     );
   }
@@ -499,16 +597,34 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.office,
     required this.canOpenDirections,
     required this.directionsService,
+    required this.routePreview,
+    required this.isRouteLoading,
+    required this.selectedDirectionsFlow,
+    required this.onDirectionsFlowChanged,
   });
 
   final Office office;
   final bool canOpenDirections;
   final DirectionsService directionsService;
+  final RoutePreviewData? routePreview;
+  final bool isRouteLoading;
+  final DirectionsFlow selectedDirectionsFlow;
+  final ValueChanged<DirectionsFlow> onDirectionsFlowChanged;
 
   @override
   Widget build(BuildContext context) {
+    final bool hasRoutePreview = routePreview != null;
+    final bool shouldUseInApp = selectedDirectionsFlow == DirectionsFlow.inAppPreview;
+
     return Column(
       children: <Widget>[
+        _RouteSummaryCard(
+          routePreview: routePreview,
+          isRouteLoading: isRouteLoading,
+          selectedDirectionsFlow: selectedDirectionsFlow,
+          onDirectionsFlowChanged: onDirectionsFlowChanged,
+        ),
+        const SizedBox(height: 9),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
@@ -517,9 +633,18 @@ class _PrimaryActionRow extends StatelessWidget {
             ),
             onPressed: canOpenDirections
                 ? () async {
+                    if (shouldUseInApp) {
+                      final String message = hasRoutePreview
+                          ? 'Showing in-app route preview.'
+                          : 'In-app preview is still loading. You can switch to Google Maps.';
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                      return;
+                    }
+
                     final DirectionsResult result = await directionsService.openDirections(
                       lat: office.lat,
                       lng: office.lng,
+                      flow: DirectionsFlow.externalGoogleMaps,
                     );
 
                     if (!result.isSuccess && context.mounted) {
@@ -529,8 +654,12 @@ class _PrimaryActionRow extends StatelessWidget {
                     }
                   }
                 : null,
-            icon: const Icon(Icons.map_rounded),
-            label: const Text('Get Directions'),
+            icon: Icon(shouldUseInApp ? Icons.route_rounded : Icons.map_rounded),
+            label: Text(
+              shouldUseInApp
+                  ? (hasRoutePreview ? 'Use In-App Preview' : 'In-App Preview')
+                  : 'Open in Google Maps',
+            ),
           ),
         ),
         const SizedBox(height: 9),
@@ -585,23 +714,94 @@ class _PrimaryActionRow extends StatelessWidget {
 }
 
 class _RouteSummaryCard extends StatelessWidget {
-  const _RouteSummaryCard({required this.routePreview});
+  const _RouteSummaryCard({
+    required this.routePreview,
+    required this.isRouteLoading,
+    required this.selectedDirectionsFlow,
+    required this.onDirectionsFlowChanged,
+  });
 
-  final RoutePreviewData routePreview;
+  final RoutePreviewData? routePreview;
+  final bool isRouteLoading;
+  final DirectionsFlow selectedDirectionsFlow;
+  final ValueChanged<DirectionsFlow> onDirectionsFlowChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Text(
-        'Route preview: ${_distanceLabel(routePreview.distanceMeters)} • ${_durationLabel(routePreview.duration)}',
-        style: Theme.of(context).textTheme.bodyMedium,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Route options',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _RouteStatTile(
+                  icon: Icons.straighten_rounded,
+                  title: 'Distance',
+                  value: _distanceLabel(routePreview?.distanceMeters),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _RouteStatTile(
+                  icon: Icons.schedule_rounded,
+                  title: 'ETA',
+                  value: _durationLabel(routePreview?.duration),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<DirectionsFlow>(
+            showSelectedIcon: false,
+            segments: const <ButtonSegment<DirectionsFlow>>[
+              ButtonSegment<DirectionsFlow>(
+                value: DirectionsFlow.inAppPreview,
+                label: Text('In-app'),
+                icon: Icon(Icons.route_rounded),
+              ),
+              ButtonSegment<DirectionsFlow>(
+                value: DirectionsFlow.externalGoogleMaps,
+                label: Text('Google Maps'),
+                icon: Icon(Icons.map_rounded),
+              ),
+            ],
+            selected: <DirectionsFlow>{selectedDirectionsFlow},
+            onSelectionChanged: (Set<DirectionsFlow> value) {
+              if (value.isNotEmpty) {
+                onDirectionsFlowChanged(value.first);
+              }
+            },
+          ),
+          if (isRouteLoading) ...<Widget>[
+            const SizedBox(height: 10),
+            Text(
+              'Loading live route preview...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -630,6 +830,65 @@ class _RouteSummaryCard extends StatelessWidget {
       return '${hours}h';
     }
     return '${hours}h ${minutes}m';
+  }
+}
+
+class _RouteStatTile extends StatelessWidget {
+  const _RouteStatTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F7),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AppTheme.red.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: AppTheme.red),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                ),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
