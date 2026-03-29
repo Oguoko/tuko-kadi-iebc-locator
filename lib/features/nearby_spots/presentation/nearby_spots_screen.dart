@@ -70,72 +70,48 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
         child: Column(
           children: <Widget>[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: Row(
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      'IEBC Locator',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      'Nearby Spots',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.2,
+                          ),
                     ),
                   ),
-                  const CircleAvatar(
-                    radius: 18,
-                    backgroundColor: AppTheme.red,
-                    child: Icon(Icons.person, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  colors: <Color>[Color(0xFFE53935), Color(0xFF1A1A1A)],
-                ),
-              ),
-              child: Stack(
-                children: <Widget>[
-                  Positioned.fill(
-                    child: Opacity(
-                      opacity: 0.18,
-                      child: Image.asset('assets/branding/logo.png', fit: BoxFit.cover),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const Text('Nearby Vibes', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
-                        const SizedBox(height: 6),
-                        Text(
-                          office == null ? 'Select an office to explore places nearby.' : '${office.constituency} • ${office.county}',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        const Spacer(),
-                        Wrap(
-                          spacing: 8,
-                          children: NearbySpotCategory.values
-                              .map(
-                                (NearbySpotCategory category) => ChoiceChip(
-                                  label: Text(category.label),
-                                  selected: _selectedCategory == category,
-                                  onSelected: hasCoordinates ? (_) => _setCategory(category) : null,
-                                ),
-                              )
-                              .toList(growable: false),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.red,
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: AppTheme.red.withValues(alpha: 0.3),
+                          blurRadius: 14,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
+                    child: const Icon(Icons.person, color: Colors.white),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _SpotsHero(
+                office: office,
+                selectedCategory: _selectedCategory,
+                enabled: hasCoordinates,
+                onCategorySelected: _setCategory,
+              ),
+            ),
+            const SizedBox(height: 16),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -174,8 +150,9 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
                           }
 
                           return ListView.separated(
+                            padding: const EdgeInsets.only(bottom: 20),
                             itemCount: spots.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: 12),
+                            separatorBuilder: (_, _) => const SizedBox(height: 14),
                             itemBuilder: (BuildContext context, int index) {
                               final NearbySpot spot = spots[index];
                               return _NearbySpotCard(
@@ -208,6 +185,122 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
   }
 }
 
+class _SpotsHero extends StatelessWidget {
+  const _SpotsHero({
+    required this.office,
+    required this.selectedCategory,
+    required this.enabled,
+    required this.onCategorySelected,
+  });
+
+  final Office? office;
+  final NearbySpotCategory selectedCategory;
+  final bool enabled;
+  final ValueChanged<NearbySpotCategory> onCategorySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFE53935), Color(0xFF111111)],
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      const Text(
+                        'Street-side Picks',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        office == null
+                            ? 'Select an office to explore places nearby.'
+                            : '${office!.constituency} • ${office!.county}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SizedBox(
+                      height: 90,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: <Widget>[
+                          Image.asset('assets/branding/logo.png', fit: BoxFit.cover),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.56),
+                            ),
+                          ),
+                          const Center(
+                            child: Icon(Icons.place_rounded, color: Colors.white, size: 34),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: NearbySpotCategory.values
+                    .map(
+                      (NearbySpotCategory category) => ChoiceChip(
+                        label: Text(category.label),
+                        selected: selectedCategory == category,
+                        onSelected: enabled ? (_) => onCategorySelected(category) : null,
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _NearbySpotCard extends StatelessWidget {
   const _NearbySpotCard({
     required this.spot,
@@ -221,61 +314,90 @@ class _NearbySpotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: 86,
-                height: 86,
-                child: imageUrl == null
-                    ? Container(
-                        color: Colors.black12,
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.image_not_supported_rounded),
-                      )
-                    : Image.network(
-                        imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => Container(
-                          color: Colors.black12,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image_outlined),
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(spot.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Text('${spot.primaryType} • ${spot.distanceLabel}'),
-                  const SizedBox(height: 8),
-                  Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: SizedBox(
+                    width: 88,
+                    height: 88,
+                    child: imageUrl == null
+                        ? Container(
+                            color: const Color(0xFFF0F0F0),
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.image_not_supported_rounded),
+                          )
+                        : Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Container(
+                              color: const Color(0xFFF0F0F0),
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.broken_image_outlined),
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.red.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text('⭐ ${spot.ratingLabel}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      Text(
+                        spot.name,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              height: 1.15,
+                            ),
                       ),
-                      const Spacer(),
-                      FilledButton.icon(
-                        onPressed: onOpenMap,
-                        icon: const Icon(Icons.directions_rounded, size: 16),
-                        label: const Text('Open in Maps'),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${spot.primaryType} • ${spot.distanceLabel}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.red.withValues(alpha: 0.11),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '⭐ ${spot.ratingLabel}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
                       ),
                     ],
                   ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onOpenMap,
+                icon: const Icon(Icons.directions_rounded, size: 18),
+                label: const Text('Open in Maps'),
               ),
             ),
           ],

@@ -34,21 +34,21 @@ class OfficeDetailsScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               _TopHeader(office: currentOffice),
               const SizedBox(height: 18),
-              _MapHero(office: currentOffice),
-              const SizedBox(height: 14),
+              _EditorialHero(office: currentOffice),
+              const SizedBox(height: 18),
               _PrimaryActionRow(
                 office: currentOffice,
                 canOpenDirections: canOpenDirections,
                 directionsService: directionsService,
               ),
               if (!canOpenDirections) ...<Widget>[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   'Directions unavailable: office coordinates are missing or invalid.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -56,9 +56,9 @@ class OfficeDetailsScreen extends StatelessWidget {
                       ),
                 ),
               ],
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               const _WhatToCarrySection(),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
               _NearbySpotsPreview(office: currentOffice),
             ],
           ),
@@ -89,6 +89,7 @@ class _TopHeader extends StatelessWidget {
                 office.constituency,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w900,
+                      letterSpacing: -0.3,
                     ),
               ),
               const SizedBox(height: 4),
@@ -101,12 +102,56 @@ class _TopHeader extends StatelessWidget {
             ],
           ),
         ),
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: AppTheme.red,
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppTheme.red,
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: AppTheme.red.withValues(alpha: 0.34),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
           child: const Icon(Icons.person_rounded, color: Colors.white),
         ),
       ],
+    );
+  }
+}
+
+class _EditorialHero extends StatelessWidget {
+  const _EditorialHero({required this.office});
+
+  final Office office;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        color: Colors.white,
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 30,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: <Widget>[
+            _MapHero(office: office),
+            const SizedBox(height: 12),
+            _HeroMetaPanel(office: office),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -123,7 +168,7 @@ class _MapHero extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(
-        height: 230,
+        height: 244,
         child: Stack(
           children: <Widget>[
             Positioned.fill(
@@ -131,7 +176,7 @@ class _MapHero extends StatelessWidget {
                   ? GoogleMap(
                       initialCameraPosition: CameraPosition(
                         target: LatLng(office.lat!, office.lng!),
-                        zoom: 14,
+                        zoom: 14.4,
                       ),
                       mapToolbarEnabled: false,
                       zoomControlsEnabled: false,
@@ -149,7 +194,7 @@ class _MapHero extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: <Color>[Color(0xFF1E1E1E), Color(0xFFE53935)],
+                          colors: <Color>[Color(0xFF111111), Color(0xFFE53935)],
                         ),
                       ),
                       child: const Center(
@@ -164,8 +209,8 @@ class _MapHero extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: <Color>[
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.50),
+                      Colors.black.withValues(alpha: 0.15),
+                      Colors.black.withValues(alpha: 0.68),
                     ],
                   ),
                 ),
@@ -173,57 +218,160 @@ class _MapHero extends StatelessWidget {
             ),
             Positioned(
               left: 14,
+              top: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                    SizedBox(width: 6),
+                    Text(
+                      'Official IEBC Desk',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 14,
               right: 14,
               bottom: 14,
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          office.officeLocation,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          DistanceUtils.formatDistanceLabel(
-                            office.distanceMeters,
-                            fallback: office.estimatedDistanceText ?? 'Distance unavailable',
-                          ),
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
+                  Text(
+                    office.officeLocation,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      height: 1.2,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(20),
+                  const SizedBox(height: 4),
+                  Text(
+                    DistanceUtils.formatDistanceLabel(
+                      office.distanceMeters,
+                      fallback: office.estimatedDistanceText ?? 'Distance unavailable',
                     ),
-                    child: const Row(
-                      children: <Widget>[
-                        Icon(Icons.verified_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'IEBC Office',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
+                    style: const TextStyle(color: Colors.white70),
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeroMetaPanel extends StatelessWidget {
+  const _HeroMetaPanel({required this.office});
+
+  final Office office;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: const Color(0xFFF7F7F7),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: _MetaStat(
+                  title: 'Constituency Office',
+                  value: office.constituency,
+                  icon: Icons.account_balance_rounded,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MetaStat(
+                  title: 'County',
+                  value: office.county,
+                  icon: Icons.map_rounded,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaStat extends StatelessWidget {
+  const _MetaStat({required this.title, required this.value, required this.icon});
+
+  final String title;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.red.withValues(alpha: 0.12),
+            ),
+            child: Icon(icon, color: AppTheme.red, size: 17),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: colors.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              height: 1.15,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -247,6 +395,9 @@ class _PrimaryActionRow extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
             onPressed: canOpenDirections
                 ? () async {
                     final DirectionsResult result = await directionsService.openDirections(
@@ -265,11 +416,14 @@ class _PrimaryActionRow extends StatelessWidget {
             label: const Text('Get Directions'),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 9),
         Row(
           children: <Widget>[
             Expanded(
               child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Call Office will be enabled soon.')),
@@ -279,9 +433,12 @@ class _PrimaryActionRow extends StatelessWidget {
                 label: const Text('Call Office'),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Share location will be added soon.')),
@@ -315,31 +472,45 @@ class _WhatToCarrySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const <Widget>[
-            _SectionTitle(title: 'What to Carry', icon: Icons.fact_check_rounded),
-            SizedBox(height: 10),
-            _CarryItem(
-              icon: Icons.badge_rounded,
-              title: 'National ID Card',
-              subtitle: 'Bring original national ID for verification',
-            ),
-            _CarryItem(
-              icon: Icons.description_outlined,
-              title: 'Proof of Residence',
-              subtitle: 'Utility bill or local address confirmation',
-            ),
-            _CarryItem(
-              icon: Icons.edit_note_rounded,
-              title: 'Personal Pen',
-              subtitle: 'Recommended for quick form filling',
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const <Widget>[
+          _SectionTitle(title: 'What to Carry', icon: Icons.fact_check_rounded),
+          SizedBox(height: 10),
+          Text(
+            'Prepare these essentials before heading to the office.',
+            style: TextStyle(color: Color(0xFF6B6B6B), height: 1.3),
+          ),
+          SizedBox(height: 12),
+          _CarryItem(
+            icon: Icons.badge_rounded,
+            title: 'National ID Card',
+            subtitle: 'Bring original national ID for verification',
+          ),
+          _CarryItem(
+            icon: Icons.description_outlined,
+            title: 'Proof of Residence',
+            subtitle: 'Utility bill or local address confirmation',
+          ),
+          _CarryItem(
+            icon: Icons.edit_note_rounded,
+            title: 'Personal Pen',
+            subtitle: 'Recommended for quick form filling',
+          ),
+        ],
       ),
     );
   }
@@ -359,14 +530,15 @@ class _CarryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           CircleAvatar(
             radius: 18,
@@ -379,7 +551,11 @@ class _CarryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
               ],
             ),
           ),
@@ -409,15 +585,27 @@ class _NearbySpotsPreview extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 170,
+          height: 182,
           child: ListView(
             scrollDirection: Axis.horizontal,
             children: const <Widget>[
-              _PreviewSpotCard(title: 'Local Eateries', subtitle: 'Food • 2-8 min walk', icon: Icons.restaurant_rounded),
-              _PreviewSpotCard(title: 'Coffee Stops', subtitle: 'Cafés • good Wi-Fi', icon: Icons.local_cafe_rounded),
-              _PreviewSpotCard(title: 'Chill Spots', subtitle: 'Parks • unwind nearby', icon: Icons.park_rounded),
+              _PreviewSpotCard(
+                title: 'Local Eateries',
+                subtitle: 'Food • 2-8 min walk',
+                icon: Icons.restaurant_rounded,
+              ),
+              _PreviewSpotCard(
+                title: 'Coffee Stops',
+                subtitle: 'Cafés • good Wi‑Fi',
+                icon: Icons.local_cafe_rounded,
+              ),
+              _PreviewSpotCard(
+                title: 'Chill Spots',
+                subtitle: 'Parks • unwind nearby',
+                icon: Icons.park_rounded,
+              ),
             ],
           ),
         ),
@@ -436,14 +624,14 @@ class _PreviewSpotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 220,
+      width: 232,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFF1F1F1F), Color(0xFFE53935)],
+          colors: <Color>[Color(0xFF101010), Color(0xFFE53935)],
         ),
       ),
       child: Padding(
@@ -457,7 +645,14 @@ class _PreviewSpotCard extends StatelessWidget {
               child: Icon(icon, color: Colors.white, size: 18),
             ),
             const Spacer(),
-            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(subtitle, style: const TextStyle(color: Colors.white70)),
           ],
