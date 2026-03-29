@@ -21,7 +21,7 @@ class GooglePlacesService {
       return null;
     }
 
-    return 'https://places.googleapis.com/v1/$photoReference/media?maxHeightPx=420&maxWidthPx=420&key=$_apiKey';
+    return 'https://places.googleapis.com/v1/$photoReference/media?maxHeightPx=400&maxWidthPx=400&key=$_apiKey';
   }
 
   Future<List<NearbySpot>> fetchNearbySpots({
@@ -61,7 +61,7 @@ class GooglePlacesService {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': _apiKey,
         'X-Goog-FieldMask':
-            'places.id,places.displayName,places.primaryType,places.types,places.rating,places.formattedAddress,places.location',
+            'places.id,places.displayName,places.primaryType,places.types,places.rating,places.formattedAddress,places.location,places.photos',
       },
       body: jsonEncode(requestBody),
     );

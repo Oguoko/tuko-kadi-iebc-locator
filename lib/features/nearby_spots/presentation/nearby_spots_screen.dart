@@ -157,7 +157,7 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
                               final NearbySpot spot = spots[index];
                               return _NearbySpotCard(
                                 spot: spot,
-                                imageUrl: _placesService.buildPhotoUrl(spot.photoReference),
+                                imageUrl: _placesService.buildPhotoUrl(spot.firstPhotoName),
                                 onOpenMap: () async {
                                   final DirectionsResult result = await _directionsService.openDirections(
                                     lat: spot.latitude,
@@ -339,19 +339,25 @@ class _NearbySpotCard extends StatelessWidget {
                     width: 88,
                     height: 88,
                     child: imageUrl == null
-                        ? Container(
-                            color: const Color(0xFFF0F0F0),
-                            alignment: Alignment.center,
-                            child: const Icon(Icons.image_not_supported_rounded),
-                          )
+                        ? const _SpotImagePlaceholder(icon: Icons.image_not_supported_rounded)
                         : Image.network(
                             imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Container(
-                              color: const Color(0xFFF0F0F0),
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.broken_image_outlined),
-                            ),
+                            loadingBuilder: (
+                              BuildContext context,
+                              Widget child,
+                              ImageChunkEvent? loadingProgress,
+                            ) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
+
+                              return const _SpotImagePlaceholder(
+                                icon: Icons.image_rounded,
+                                showLoading: true,
+                              );
+                            },
+                            errorBuilder: (_, _, _) => const _SpotImagePlaceholder(icon: Icons.broken_image_outlined),
                           ),
                   ),
                 ),
@@ -402,6 +408,36 @@ class _NearbySpotCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+class _SpotImagePlaceholder extends StatelessWidget {
+  const _SpotImagePlaceholder({
+    required this.icon,
+    this.showLoading = false,
+  });
+
+  final IconData icon;
+  final bool showLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFFF0F0F0),
+      child: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          Icon(icon, color: Colors.black54),
+          if (showLoading)
+            const SizedBox(
+              width: 26,
+              height: 26,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+        ],
       ),
     );
   }
