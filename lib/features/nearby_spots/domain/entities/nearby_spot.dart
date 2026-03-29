@@ -7,7 +7,7 @@ class NearbySpot {
     this.distanceMeters,
     this.latitude,
     this.longitude,
-    this.photoReference,
+    this.photos = const <NearbySpotPhoto>[],
   });
 
   final String id;
@@ -17,7 +17,15 @@ class NearbySpot {
   final double? distanceMeters;
   final double? latitude;
   final double? longitude;
-  final String? photoReference;
+  final List<NearbySpotPhoto> photos;
+
+  String? get firstPhotoName {
+    if (photos.isEmpty) {
+      return null;
+    }
+
+    return photos.first.name;
+  }
 
   String get ratingLabel {
     final double? currentRating = rating;
@@ -46,13 +54,6 @@ class NearbySpot {
     final Map<String, dynamic>? displayName = _asStringMap(json['displayName']);
     final Map<String, dynamic>? location = _asStringMap(json['location']);
 
-    String? firstPhotoReference;
-    final Object? photos = json['photos'];
-    if (photos is List<Object?> && photos.isNotEmpty) {
-      final Map<String, dynamic>? firstPhoto = _asStringMap(photos.first);
-      firstPhotoReference = _asString(firstPhoto?['name']);
-    }
-
     return NearbySpot(
       id: _asString(json['id']),
       name: _asString(displayName?['text']),
@@ -61,7 +62,7 @@ class NearbySpot {
       distanceMeters: _asDouble(json['distanceMeters']),
       latitude: _asDouble(location?['latitude']),
       longitude: _asDouble(location?['longitude']),
-      photoReference: firstPhotoReference,
+      photos: NearbySpotPhoto.listFromJson(json['photos']),
     );
   }
 
@@ -105,6 +106,58 @@ class NearbySpot {
   static double? _asDouble(Object? value) {
     if (value is num) {
       return value.toDouble();
+    }
+
+    return null;
+  }
+}
+
+class NearbySpotPhoto {
+  const NearbySpotPhoto({
+    required this.name,
+    this.widthPx,
+    this.heightPx,
+  });
+
+  final String name;
+  final int? widthPx;
+  final int? heightPx;
+
+  factory NearbySpotPhoto.fromJson(Map<String, dynamic> json) {
+    return NearbySpotPhoto(
+      name: _asString(json['name']),
+      widthPx: _asInt(json['widthPx']),
+      heightPx: _asInt(json['heightPx']),
+    );
+  }
+
+  static List<NearbySpotPhoto> listFromJson(Object? photos) {
+    if (photos is! List<Object?>) {
+      return const <NearbySpotPhoto>[];
+    }
+
+    return photos
+        .whereType<Map<String, dynamic>>()
+        .map(NearbySpotPhoto.fromJson)
+        .where((NearbySpotPhoto photo) => photo.name.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
+  static String _asString(Object? value) {
+    if (value is String) {
+      return value;
+    }
+
+    return '';
+  }
+
+  static int? _asInt(Object? value) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
     }
 
     return null;
