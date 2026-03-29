@@ -29,7 +29,6 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
   RoutePreviewData? _routePreview;
   LatLng? _originLatLng;
   bool _isRouteLoading = false;
-  DirectionsFlow _selectedDirectionsFlow = DirectionsFlow.inAppPreview;
 
   @override
   void initState() {
@@ -126,12 +125,6 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 directionsService: widget.directionsService,
                 routePreview: _routePreview,
                 isRouteLoading: _isRouteLoading,
-                selectedDirectionsFlow: _selectedDirectionsFlow,
-                onDirectionsFlowChanged: (DirectionsFlow flow) {
-                  setState(() {
-                    _selectedDirectionsFlow = flow;
-                  });
-                },
               ),
               if (!canOpenDirections) ...<Widget>[
                 const SizedBox(height: 10),
@@ -599,8 +592,6 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.directionsService,
     required this.routePreview,
     required this.isRouteLoading,
-    required this.selectedDirectionsFlow,
-    required this.onDirectionsFlowChanged,
   });
 
   final Office office;
@@ -608,21 +599,16 @@ class _PrimaryActionRow extends StatelessWidget {
   final DirectionsService directionsService;
   final RoutePreviewData? routePreview;
   final bool isRouteLoading;
-  final DirectionsFlow selectedDirectionsFlow;
-  final ValueChanged<DirectionsFlow> onDirectionsFlowChanged;
 
   @override
   Widget build(BuildContext context) {
     final bool hasRoutePreview = routePreview != null;
-    final bool shouldUseInApp = selectedDirectionsFlow == DirectionsFlow.inAppPreview;
 
     return Column(
       children: <Widget>[
         _RouteSummaryCard(
           routePreview: routePreview,
           isRouteLoading: isRouteLoading,
-          selectedDirectionsFlow: selectedDirectionsFlow,
-          onDirectionsFlowChanged: onDirectionsFlowChanged,
         ),
         const SizedBox(height: 9),
         SizedBox(
@@ -633,11 +619,10 @@ class _PrimaryActionRow extends StatelessWidget {
             ),
             onPressed: canOpenDirections
                 ? () async {
-                    if (shouldUseInApp) {
-                      final String message = hasRoutePreview
-                          ? 'Showing in-app route preview.'
-                          : 'In-app preview is still loading. You can switch to Google Maps.';
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                    if (hasRoutePreview) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Showing in-app route preview.')),
+                      );
                       return;
                     }
 
@@ -651,15 +636,45 @@ class _PrimaryActionRow extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(_directionsErrorMessage(result.failure))),
                       );
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'In-app preview unavailable right now. Opened Google Maps instead.',
+                          ),
+                        ),
+                      );
                     }
                   }
                 : null,
-            icon: Icon(shouldUseInApp ? Icons.route_rounded : Icons.map_rounded),
-            label: Text(
-              shouldUseInApp
-                  ? (hasRoutePreview ? 'Use In-App Preview' : 'In-App Preview')
-                  : 'Open in Google Maps',
+            icon: const Icon(Icons.route_rounded),
+            label: const Text('Preview Route In-App'),
+          ),
+        ),
+        const SizedBox(height: 9),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
+            onPressed: canOpenDirections
+                ? () async {
+                    final DirectionsResult result = await directionsService.openDirections(
+                      lat: office.lat,
+                      lng: office.lng,
+                      flow: DirectionsFlow.externalGoogleMaps,
+                    );
+
+                    if (!result.isSuccess && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(_directionsErrorMessage(result.failure))),
+                      );
+                    }
+                  }
+                : null,
+            icon: const Icon(Icons.open_in_new_rounded),
+            label: const Text('Open in Google Maps'),
           ),
         ),
         const SizedBox(height: 9),
@@ -717,14 +732,10 @@ class _RouteSummaryCard extends StatelessWidget {
   const _RouteSummaryCard({
     required this.routePreview,
     required this.isRouteLoading,
-    required this.selectedDirectionsFlow,
-    required this.onDirectionsFlowChanged,
   });
 
   final RoutePreviewData? routePreview;
   final bool isRouteLoading;
-  final DirectionsFlow selectedDirectionsFlow;
-  final ValueChanged<DirectionsFlow> onDirectionsFlowChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -770,27 +781,14 @@ class _RouteSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          SegmentedButton<DirectionsFlow>(
-            showSelectedIcon: false,
-            segments: const <ButtonSegment<DirectionsFlow>>[
-              ButtonSegment<DirectionsFlow>(
-                value: DirectionsFlow.inAppPreview,
-                label: Text('In-app'),
-                icon: Icon(Icons.route_rounded),
-              ),
-              ButtonSegment<DirectionsFlow>(
-                value: DirectionsFlow.externalGoogleMaps,
-                label: Text('Google Maps'),
-                icon: Icon(Icons.map_rounded),
-              ),
-            ],
-            selected: <DirectionsFlow>{selectedDirectionsFlow},
-            onSelectionChanged: (Set<DirectionsFlow> value) {
-              if (value.isNotEmpty) {
-                onDirectionsFlowChanged(value.first);
-              }
-            },
+          const SizedBox(height: 10),
+          Text(
+            routePreview == null
+                ? 'Live preview is still loading. We will fall back to Google Maps if needed.'
+                : 'This map shows your in-app route preview.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
           if (isRouteLoading) ...<Widget>[
             const SizedBox(height: 10),

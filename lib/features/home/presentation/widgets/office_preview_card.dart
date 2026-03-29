@@ -137,11 +137,31 @@ class OfficePreviewCard extends StatelessWidget {
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: canOpenDirections
+                          ? () {
+                              context.push(
+                                AppRoutes.officeDetails,
+                                extra: office,
+                              );
+                            }
+                          : null,
+                      icon: const Icon(Icons.directions_rounded, size: 18),
+                      label: const Text('Directions'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: 'Open in Google Maps',
+                    child: OutlinedButton(
+                      onPressed: canOpenDirections
                           ? () async {
                               final DirectionsResult result =
                                   await directionsService.openDirections(
                                 lat: office.lat,
                                 lng: office.lng,
+                                flow: DirectionsFlow.externalGoogleMaps,
                               );
 
                               if (!result.isSuccess && context.mounted) {
@@ -155,11 +175,13 @@ class OfficePreviewCard extends StatelessWidget {
                               }
                             }
                           : null,
-                      icon: const Icon(Icons.directions_rounded, size: 18),
-                      label: const Text('Directions'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                       ),
+                      child: const Icon(Icons.open_in_new_rounded, size: 18),
                     ),
                   ),
                   const SizedBox(width: 8),
