@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
+import 'package:tuko_kadi_iebc_locator/app/theme/app_theme.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
 import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
@@ -18,132 +20,280 @@ class OfficeDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Office? currentOffice = office;
-    final bool hasOffice = currentOffice != null;
+    if (currentOffice == null) {
+      return const Scaffold(
+        body: SafeArea(child: _NoOfficeSelectedState()),
+      );
+    }
+
     final bool canOpenDirections = directionsService.hasValidDestination(
-      currentOffice?.lat,
-      currentOffice?.lng,
+      currentOffice.lat,
+      currentOffice.lng,
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _TopHeader(office: currentOffice),
+              const SizedBox(height: 18),
+              _MapHero(office: currentOffice),
+              const SizedBox(height: 14),
+              _PrimaryActionRow(
+                office: currentOffice,
+                canOpenDirections: canOpenDirections,
+                directionsService: directionsService,
+              ),
+              if (!canOpenDirections) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  'Directions unavailable: office coordinates are missing or invalid.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+              const SizedBox(height: 22),
+              const _WhatToCarrySection(),
+              const SizedBox(height: 22),
+              _NearbySpotsPreview(office: currentOffice),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: const _StandaloneBottomNav(activeIndex: 0),
+    );
+  }
+}
+
+class _TopHeader extends StatelessWidget {
+  const _TopHeader({required this.office});
+
+  final Office office;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                office.constituency,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                office.county,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: AppTheme.red,
+          child: const Icon(Icons.person_rounded, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
+
+class _MapHero extends StatelessWidget {
+  const _MapHero({required this.office});
+
+  final Office office;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasCoordinates = office.lat != null && office.lng != null;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        height: 230,
+        child: Stack(
           children: <Widget>[
-            Image.asset('assets/branding/logo.png', height: 24),
-            const SizedBox(width: 8),
-            const Text('Office Details'),
+            Positioned.fill(
+              child: hasCoordinates
+                  ? GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(office.lat!, office.lng!),
+                        zoom: 14,
+                      ),
+                      mapToolbarEnabled: false,
+                      zoomControlsEnabled: false,
+                      myLocationButtonEnabled: false,
+                      markers: <Marker>{
+                        Marker(
+                          markerId: MarkerId(office.id),
+                          position: LatLng(office.lat!, office.lng!),
+                          infoWindow: InfoWindow(title: office.constituency),
+                        ),
+                      },
+                    )
+                  : Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: <Color>[Color(0xFF1E1E1E), Color(0xFFE53935)],
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(Icons.map_outlined, color: Colors.white, size: 46),
+                      ),
+                    ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.50),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 14,
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          office.officeLocation,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          DistanceUtils.formatDistanceLabel(
+                            office.distanceMeters,
+                            fallback: office.estimatedDistanceText ?? 'Distance unavailable',
+                          ),
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      children: <Widget>[
+                        Icon(Icons.verified_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'IEBC Office',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: hasOffice
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      currentOffice.constituency,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    _InfoCard(
-                      children: <Widget>[
-                        _DetailRow(
-                          label: 'Constituency',
-                          value: currentOffice.constituency,
-                        ),
-                        _DetailRow(label: 'County', value: currentOffice.county),
-                        _DetailRow(
-                          label: 'Office location',
-                          value: currentOffice.officeLocation,
-                        ),
-                        _DetailRow(label: 'Landmark', value: currentOffice.landmark),
-                        _DetailRow(
-                          label: 'Estimated distance',
-                          value: currentOffice.estimatedDistanceText,
-                          fallback: 'Not provided',
-                        ),
-                        _DetailRow(
-                          label: 'Current distance',
-                          value: DistanceUtils.formatDistanceLabel(
-                            currentOffice.distanceMeters,
-                            fallback: 'Not available (turn on location)',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: canOpenDirections
-                                ? () async {
-                                    final DirectionsResult result =
-                                        await directionsService.openDirections(
-                                      lat: currentOffice.lat,
-                                      lng: currentOffice.lng,
-                                    );
+    );
+  }
+}
 
-                                    if (!result.isSuccess && context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            _directionsErrorMessage(result.failure),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                : null,
-                            icon: const Icon(Icons.directions_rounded, size: 18),
-                            label: const Text('Directions'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => context.go(
-                              AppRoutes.nearbySpots,
-                              extra: currentOffice,
-                            ),
-                            icon: const Icon(Icons.local_activity_rounded, size: 18),
-                            label: const Text('Nearby Spots'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Share location will be added soon.'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.share_location_rounded, size: 18),
-                        label: const Text('Share Location'),
-                      ),
-                    ),
-                    if (!canOpenDirections) ...<Widget>[
-                      const SizedBox(height: 10),
-                      Text(
-                        'Directions unavailable: office coordinates are missing or invalid.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ],
-                  ],
-                )
-              : const _NoOfficeSelectedState(),
+class _PrimaryActionRow extends StatelessWidget {
+  const _PrimaryActionRow({
+    required this.office,
+    required this.canOpenDirections,
+    required this.directionsService,
+  });
+
+  final Office office;
+  final bool canOpenDirections;
+  final DirectionsService directionsService;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: canOpenDirections
+                ? () async {
+                    final DirectionsResult result = await directionsService.openDirections(
+                      lat: office.lat,
+                      lng: office.lng,
+                    );
+
+                    if (!result.isSuccess && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(_directionsErrorMessage(result.failure))),
+                      );
+                    }
+                  }
+                : null,
+            icon: const Icon(Icons.map_rounded),
+            label: const Text('Get Directions'),
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Call Office will be enabled soon.')),
+                  );
+                },
+                icon: const Icon(Icons.call_rounded),
+                label: const Text('Call Office'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Share location will be added soon.')),
+                  );
+                },
+                icon: const Icon(Icons.share_location_rounded),
+                label: const Text('Share Location'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -160,65 +310,178 @@ class OfficeDetailsScreen extends StatelessWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.children});
-
-  final List<Widget> children;
+class _WhatToCarrySection extends StatelessWidget {
+  const _WhatToCarrySection();
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(children: children),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const <Widget>[
+            _SectionTitle(title: 'What to Carry', icon: Icons.fact_check_rounded),
+            SizedBox(height: 10),
+            _CarryItem(
+              icon: Icons.badge_rounded,
+              title: 'National ID Card',
+              subtitle: 'Bring original national ID for verification',
+            ),
+            _CarryItem(
+              icon: Icons.description_outlined,
+              title: 'Proof of Residence',
+              subtitle: 'Utility bill or local address confirmation',
+            ),
+            _CarryItem(
+              icon: Icons.edit_note_rounded,
+              title: 'Personal Pen',
+              subtitle: 'Recommended for quick form filling',
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    this.value,
-    this.fallback = 'Not available',
+class _CarryItem extends StatelessWidget {
+  const _CarryItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
   });
 
-  final String label;
-  final String? value;
-  final String fallback;
+  final IconData icon;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    final String resolvedValue = (value != null && value!.trim().isNotEmpty)
-        ? value!.trim()
-        : fallback;
-    final ColorScheme colors = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppTheme.red.withValues(alpha: 0.13),
+            child: Icon(icon, color: AppTheme.red, size: 18),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              resolvedValue,
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NearbySpotsPreview extends StatelessWidget {
+  const _NearbySpotsPreview({required this.office});
+
+  final Office office;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            const _SectionTitle(title: 'Nearby Spots', icon: Icons.local_fire_department_rounded),
+            TextButton(
+              onPressed: () => context.push(AppRoutes.nearbySpots, extra: office),
+              child: const Text('See all'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 170,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: const <Widget>[
+              _PreviewSpotCard(title: 'Local Eateries', subtitle: 'Food • 2-8 min walk', icon: Icons.restaurant_rounded),
+              _PreviewSpotCard(title: 'Coffee Stops', subtitle: 'Cafés • good Wi-Fi', icon: Icons.local_cafe_rounded),
+              _PreviewSpotCard(title: 'Chill Spots', subtitle: 'Parks • unwind nearby', icon: Icons.park_rounded),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PreviewSpotCard extends StatelessWidget {
+  const _PreviewSpotCard({required this.title, required this.subtitle, required this.icon});
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF1F1F1F), Color(0xFFE53935)],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              child: Icon(icon, color: Colors.white, size: 18),
+            ),
+            const Spacer(),
+            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+            const SizedBox(height: 4),
+            Text(subtitle, style: const TextStyle(color: Colors.white70)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title, required this.icon});
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(icon, size: 18, color: AppTheme.red),
+        const SizedBox(width: 6),
+        Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20)),
+      ],
     );
   }
 }
@@ -231,30 +494,69 @@ class _NoOfficeSelectedState extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
 
     return Center(
-      child: Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.info_outline_rounded, size: 34, color: colors.primary),
-              const SizedBox(height: 12),
-              Text(
-                'No office selected',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Select an office from the home screen card or map marker to view full details.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-            ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(Icons.info_outline_rounded, size: 34, color: colors.primary),
+                const SizedBox(height: 12),
+                Text(
+                  'No office selected',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Select an office from the home screen card or map marker to view full details.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _StandaloneBottomNav extends StatelessWidget {
+  const _StandaloneBottomNav({required this.activeIndex});
+
+  final int activeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: NavigationBar(
+        selectedIndex: activeIndex,
+        indicatorColor: AppTheme.red.withValues(alpha: 0.16),
+        onDestinationSelected: (int index) {
+          switch (index) {
+            case 0:
+              context.go(AppRoutes.explore);
+              return;
+            case 1:
+              context.go(AppRoutes.search);
+              return;
+            case 2:
+              context.go(AppRoutes.savedFavorites);
+              return;
+            case 3:
+              context.go(AppRoutes.profile);
+              return;
+          }
+        },
+        destinations: const <NavigationDestination>[
+          NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore), label: 'Explore'),
+          NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(icon: Icon(Icons.bookmark_border), selectedIcon: Icon(Icons.bookmark), label: 'Saved'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        ],
       ),
     );
   }

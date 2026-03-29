@@ -5,6 +5,9 @@ class NearbySpot {
     required this.primaryType,
     this.rating,
     this.distanceMeters,
+    this.latitude,
+    this.longitude,
+    this.photoReference,
   });
 
   final String id;
@@ -12,6 +15,9 @@ class NearbySpot {
   final String primaryType;
   final double? rating;
   final double? distanceMeters;
+  final double? latitude;
+  final double? longitude;
+  final String? photoReference;
 
   String get ratingLabel {
     final double? currentRating = rating;
@@ -40,6 +46,14 @@ class NearbySpot {
     final Map<String, dynamic>? primaryTypeDisplayName =
         _asStringMap(json['primaryTypeDisplayName']);
     final Map<String, dynamic>? displayName = _asStringMap(json['displayName']);
+    final Map<String, dynamic>? location = _asStringMap(json['location']);
+
+    String? firstPhotoReference;
+    final Object? photos = json['photos'];
+    if (photos is List<Object?> && photos.isNotEmpty) {
+      final Map<String, dynamic>? firstPhoto = _asStringMap(photos.first);
+      firstPhotoReference = _asString(firstPhoto?['name']);
+    }
 
     return NearbySpot(
       id: _asString(json['id']),
@@ -47,6 +61,9 @@ class NearbySpot {
       primaryType: _resolvePrimaryType(primaryTypeDisplayName, json['types']),
       rating: _asDouble(json['rating']),
       distanceMeters: _asDouble(json['distanceMeters']),
+      latitude: _asDouble(location?['latitude']),
+      longitude: _asDouble(location?['longitude']),
+      photoReference: firstPhotoReference,
     );
   }
 
@@ -102,7 +119,7 @@ enum NearbySpotCategory {
     includedTypes: <String>['restaurant'],
   ),
   cafes(
-    label: 'Cafes',
+    label: 'Cafés',
     includedTypes: <String>['cafe'],
   ),
   chillSpots(
