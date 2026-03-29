@@ -1,32 +1,104 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/theme/app_theme.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
 import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
+import 'package:tuko_kadi_iebc_locator/shared/services/google_routes_service.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
 
-class OfficeDetailsScreen extends StatelessWidget {
+class OfficeDetailsScreen extends StatefulWidget {
   const OfficeDetailsScreen({
     super.key,
     this.office,
     this.directionsService = const DirectionsService(),
-  });
+    GoogleRoutesService? routesService,
+  }) : routesService = routesService ?? GoogleRoutesService();
 
   final Office? office;
   final DirectionsService directionsService;
+  final GoogleRoutesService routesService;
+
+  @override
+  State<OfficeDetailsScreen> createState() => _OfficeDetailsScreenState();
+}
+
+class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
+  RoutePreviewData? _routePreview;
+  LatLng? _originLatLng;
+  bool _isRouteLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRoutePreview();
+  }
+
+  Future<void> _loadRoutePreview() async {
+    final Office? currentOffice = widget.office;
+    if (currentOffice == null || currentOffice.lat == null || currentOffice.lng == null) {
+      return;
+    }
+
+    setState(() {
+      _isRouteLoading = true;
+    });
+
+    try {
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      final RoutePreviewData? preview = await widget.routesService.computeRoute(
+        originLat: position.latitude,
+        originLng: position.longitude,
+        destinationLat: currentOffice.lat!,
+        destinationLng: currentOffice.lng!,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _originLatLng = LatLng(position.latitude, position.longitude);
+        _routePreview = preview;
+      });
+    } catch (_) {
+      // Route preview is best-effort in phase one; external maps remains fallback.
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isRouteLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final Office? currentOffice = office;
+    final Office? currentOffice = widget.office;
     if (currentOffice == null) {
       return const Scaffold(
         body: SafeArea(child: _NoOfficeSelectedState()),
       );
     }
 
-    final bool canOpenDirections = directionsService.hasValidDestination(
+    final bool canOpenDirections = widget.directionsService.hasValidDestination(
       currentOffice.lat,
       currentOffice.lng,
     );
@@ -40,13 +112,24 @@ class OfficeDetailsScreen extends StatelessWidget {
             children: <Widget>[
               _TopHeader(office: currentOffice),
               const SizedBox(height: 18),
-              _EditorialHero(office: currentOffice),
+              _EditorialHero(
+                office: currentOffice,
+                routePreview: _routePreview,
+                originLatLng: _originLatLng,
+              ),
               const SizedBox(height: 18),
               _PrimaryActionRow(
                 office: currentOffice,
                 canOpenDirections: canOpenDirections,
-                directionsService: directionsService,
+                directionsService: widget.directionsService,
               ),
+              if (_isRouteLoading) ...<Widget>[
+                const SizedBox(height: 10),
+                const Text('Loading route preview...'),
+              ] else if (_routePreview != null) ...<Widget>[
+                const SizedBox(height: 10),
+                _RouteSummaryCard(routePreview: _routePreview!),
+              ],
               if (!canOpenDirections) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(
@@ -124,9 +207,15 @@ class _TopHeader extends StatelessWidget {
 }
 
 class _EditorialHero extends StatelessWidget {
-  const _EditorialHero({required this.office});
+  const _EditorialHero({
+    required this.office,
+    required this.routePreview,
+    required this.originLatLng,
+  });
 
   final Office office;
+  final RoutePreviewData? routePreview;
+  final LatLng? originLatLng;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +235,11 @@ class _EditorialHero extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Column(
           children: <Widget>[
-            _MapHero(office: office),
+            _MapHero(
+              office: office,
+              routePreview: routePreview,
+              originLatLng: originLatLng,
+            ),
             const SizedBox(height: 12),
             _HeroMetaPanel(office: office),
           ],
@@ -157,9 +250,15 @@ class _EditorialHero extends StatelessWidget {
 }
 
 class _MapHero extends StatelessWidget {
-  const _MapHero({required this.office});
+  const _MapHero({
+    required this.office,
+    required this.routePreview,
+    required this.originLatLng,
+  });
 
   final Office office;
+  final RoutePreviewData? routePreview;
+  final LatLng? originLatLng;
 
   @override
   Widget build(BuildContext context) {
@@ -182,11 +281,29 @@ class _MapHero extends StatelessWidget {
                       zoomControlsEnabled: false,
                       myLocationButtonEnabled: false,
                       markers: <Marker>{
+                        if (originLatLng != null)
+                          Marker(
+                            markerId: const MarkerId('route-origin'),
+                            position: originLatLng!,
+                            infoWindow: const InfoWindow(title: 'Your location'),
+                            icon: BitmapDescriptor.defaultMarkerWithHue(
+                              BitmapDescriptor.hueAzure,
+                            ),
+                          ),
                         Marker(
                           markerId: MarkerId(office.id),
                           position: LatLng(office.lat!, office.lng!),
                           infoWindow: InfoWindow(title: office.constituency),
                         ),
+                      },
+                      polylines: <Polyline>{
+                        if ((routePreview?.points.length ?? 0) > 1)
+                          Polyline(
+                            polylineId: const PolylineId('office-preview-route'),
+                            points: routePreview!.points,
+                            color: AppTheme.red,
+                            width: 5,
+                          ),
                       },
                     )
                   : Container(
@@ -464,6 +581,55 @@ class _PrimaryActionRow extends StatelessWidget {
       case null:
         return 'Unable to open Google Maps directions.';
     }
+  }
+}
+
+class _RouteSummaryCard extends StatelessWidget {
+  const _RouteSummaryCard({required this.routePreview});
+
+  final RoutePreviewData routePreview;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Text(
+        'Route preview: ${_distanceLabel(routePreview.distanceMeters)} • ${_durationLabel(routePreview.duration)}',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+
+  String _distanceLabel(int? distanceMeters) {
+    if (distanceMeters == null || distanceMeters < 0) {
+      return 'Distance unavailable';
+    }
+    if (distanceMeters < 1000) {
+      return '${distanceMeters} m';
+    }
+    final double kilometers = distanceMeters / 1000;
+    return '${kilometers.toStringAsFixed(kilometers >= 10 ? 0 : 1)} km';
+  }
+
+  String _durationLabel(Duration? duration) {
+    if (duration == null || duration.inSeconds <= 0) {
+      return 'Time unavailable';
+    }
+    if (duration.inMinutes < 60) {
+      return '${duration.inMinutes} min';
+    }
+    final int hours = duration.inHours;
+    final int minutes = duration.inMinutes.remainder(60);
+    if (minutes == 0) {
+      return '${hours}h';
+    }
+    return '${hours}h ${minutes}m';
   }
 }
 
