@@ -10,7 +10,7 @@ import 'package:tuko_kadi_iebc_locator/shared/services/google_routes_service.dar
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
 
 class OfficeDetailsScreen extends StatefulWidget {
-  const OfficeDetailsScreen({
+  OfficeDetailsScreen({
     super.key,
     this.office,
     this.directionsService = const DirectionsService(),
