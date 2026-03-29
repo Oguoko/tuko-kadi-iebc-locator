@@ -57,7 +57,7 @@ class OfficeDetailsScreen extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 24),
-              const _WhatToCarrySection(),
+              const _FaqSection(),
               const SizedBox(height: 24),
               _NearbySpotsPreview(office: currentOffice),
             ],
@@ -467,13 +467,43 @@ class _PrimaryActionRow extends StatelessWidget {
   }
 }
 
-class _WhatToCarrySection extends StatelessWidget {
-  const _WhatToCarrySection();
+class _FaqSection extends StatelessWidget {
+  const _FaqSection();
+
+  static const List<_FaqItemData> _faqItems = <_FaqItemData>[
+    _FaqItemData(
+      question: 'What do I need to register as a voter?',
+      answer: 'Your original national ID card or a valid Kenyan passport.',
+    ),
+    _FaqItemData(
+      question: 'Do I need my acknowledgement slip to vote later?',
+      answer:
+          'No. IEBC says the acknowledgement slip is issued after registration, but it is not a requirement for voting.',
+    ),
+    _FaqItemData(
+      question: 'Can I register more than once?',
+      answer: 'No. A person is only allowed to register once.',
+    ),
+    _FaqItemData(
+      question: 'Can I transfer my registration centre later?',
+      answer: 'Yes. A voter may transfer to another registration centre during the registration period.',
+    ),
+    _FaqItemData(
+      question: 'Why should I register?',
+      answer:
+          'Registration allows you to vote, vie for office, nominate candidates, and hold leaders accountable.',
+    ),
+    _FaqItemData(
+      question: 'When can someone be denied registration?',
+      answer:
+          'A person may be denied if they are under 18, do not have the original ID/passport, are an undischarged bankrupt, have certain election-offence findings in the last five years, or are declared of unsound mind by a competent court.',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -487,77 +517,65 @@ class _WhatToCarrySection extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const <Widget>[
-          _SectionTitle(title: 'What to Carry', icon: Icons.fact_check_rounded),
-          SizedBox(height: 10),
+        children: <Widget>[
+          const _SectionTitle(title: 'Registration FAQ', icon: Icons.quiz_rounded),
+          const SizedBox(height: 10),
           Text(
-            'Prepare these essentials before heading to the office.',
-            style: TextStyle(color: Color(0xFF6B6B6B), height: 1.3),
+            'Quick guidance from IEBC voter registration information.',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.3,
+            ),
           ),
-          SizedBox(height: 12),
-          _CarryItem(
-            icon: Icons.badge_rounded,
-            title: 'National ID Card',
-            subtitle: 'Bring original national ID for verification',
-          ),
-          _CarryItem(
-            icon: Icons.description_outlined,
-            title: 'Proof of Residence',
-            subtitle: 'Utility bill or local address confirmation',
-          ),
-          _CarryItem(
-            icon: Icons.edit_note_rounded,
-            title: 'Personal Pen',
-            subtitle: 'Recommended for quick form filling',
-          ),
+          const SizedBox(height: 12),
+          for (final _FaqItemData item in _faqItems)
+            _FaqItem(question: item.question, answer: item.answer),
         ],
       ),
     );
   }
 }
 
-class _CarryItem extends StatelessWidget {
-  const _CarryItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
+class _FaqItemData {
+  const _FaqItemData({
+    required this.question,
+    required this.answer,
   });
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
+  final String question;
+  final String answer;
+}
+
+class _FaqItem extends StatelessWidget {
+  const _FaqItem({
+    required this.question,
+    required this.answer,
+  });
+
+  final String question;
+  final String answer;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFFAFAFA),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+        collapsedShape: const Border(),
+        shape: const Border(),
+        iconColor: AppTheme.red,
+        collapsedIconColor: AppTheme.red,
+        title: Text(question, style: const TextStyle(fontWeight: FontWeight.w800)),
         children: <Widget>[
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppTheme.red.withValues(alpha: 0.13),
-            child: Icon(icon, color: AppTheme.red, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
+          Text(
+            answer,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.3),
           ),
         ],
       ),
