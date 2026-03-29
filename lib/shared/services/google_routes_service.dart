@@ -45,6 +45,12 @@ class GoogleRoutesService {
         'Google Routes API key is missing. Pass --dart-define=GOOGLE_ROUTES_API_KEY=your_key.',
       );
     }
+    _validateCoordinates(
+      originLat: originLat,
+      originLng: originLng,
+      destinationLat: destinationLat,
+      destinationLng: destinationLng,
+    );
 
     final Uri uri = Uri.parse(_endpoint);
     final Map<String, dynamic> requestBody = <String, dynamic>{
@@ -83,16 +89,24 @@ class GoogleRoutesService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      final String failureMessage;
+      if (response.statusCode == 403) {
+        failureMessage =
+            'Google Routes API returned HTTP 403 (Forbidden). '
+            'For web builds, verify Routes API is enabled, billing is active, and API key restrictions allow '
+            'routes.googleapis.com from this origin.';
+      } else {
+        failureMessage = 'Failed to compute route preview (${response.statusCode}).';
+      }
       if (kDebugMode) {
         debugPrint('Google Routes computeRoutes failed.');
         debugPrint('Status: ${response.statusCode}');
         debugPrint('Endpoint: $uri');
         debugPrint('Request body: ${jsonEncode(requestBody)}');
-        debugPrint('Response body: ${response.body}');
+        debugPrint('Response body (${response.bodyBytes.length} bytes): ${response.body}');
+        debugPrint('Developer message: $failureMessage');
       }
-      throw RoutesApiException(
-        'Failed to compute route preview (${response.statusCode}).',
-      );
+      throw RoutesApiException(failureMessage);
     }
 
     final Object? decoded = jsonDecode(response.body);
@@ -178,6 +192,33 @@ class GoogleRoutesService {
     }
 
     return Duration(milliseconds: (seconds * 1000).round());
+  }
+
+  void _validateCoordinates({
+    required double originLat,
+    required double originLng,
+    required double destinationLat,
+    required double destinationLng,
+  }) {
+    final bool isValidOrigin =
+        originLat.isFinite &&
+        originLng.isFinite &&
+        originLat >= -90 &&
+        originLat <= 90 &&
+        originLng >= -180 &&
+        originLng <= 180;
+    final bool isValidDestination =
+        destinationLat.isFinite &&
+        destinationLng.isFinite &&
+        destinationLat >= -90 &&
+        destinationLat <= 90 &&
+        destinationLng >= -180 &&
+        destinationLng <= 180;
+    if (!isValidOrigin || !isValidDestination) {
+      throw const RoutesApiException(
+        'Cannot compute route preview: origin or destination coordinates are invalid.',
+      );
+    }
   }
 }
 
