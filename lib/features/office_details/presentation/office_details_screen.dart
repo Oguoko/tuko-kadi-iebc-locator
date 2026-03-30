@@ -31,6 +31,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
   LatLng? _originLatLng;
   String? _routePreviewDebugError;
   bool _isRouteLoading = false;
+  bool _isRoutePreviewVisible = false;
 
   @override
   void initState() {
@@ -111,6 +112,41 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
     }
   }
 
+  Future<void> _handlePreviewRouteTap() async {
+    if (_isRouteLoading) {
+      return;
+    }
+
+    if (_routePreview == null || _originLatLng == null) {
+      await _loadRoutePreview();
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (_routePreview != null && (_routePreview!.points.length > 1 || _originLatLng != null)) {
+      setState(() {
+        _isRoutePreviewVisible = true;
+      });
+    } else {
+      final Office? currentOffice = widget.office;
+      final DirectionsResult result = await widget.directionsService.openDirections(
+        lat: currentOffice?.lat,
+        lng: currentOffice?.lng,
+        flow: DirectionsFlow.externalGoogleMaps,
+      );
+
+      if (!mounted || result.isSuccess) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(routeDirectionsErrorMessage(result.failure))),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Office? currentOffice = widget.office;
@@ -139,6 +175,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 routePreview: _routePreview,
                 originLatLng: _originLatLng,
                 isRouteLoading: _isRouteLoading,
+                isRoutePreviewVisible: _isRoutePreviewVisible,
               ),
               const SizedBox(height: 18),
               _PrimaryActionRow(
@@ -148,6 +185,8 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 routePreview: _routePreview,
                 routePreviewDebugError: _routePreviewDebugError,
                 isRouteLoading: _isRouteLoading,
+                onPreviewRouteTap: _handlePreviewRouteTap,
+                isRoutePreviewVisible: _isRoutePreviewVisible,
               ),
               if (!canOpenDirections) ...<Widget>[
                 const SizedBox(height: 10),
@@ -231,12 +270,14 @@ class _EditorialHero extends StatelessWidget {
     required this.routePreview,
     required this.originLatLng,
     required this.isRouteLoading,
+    required this.isRoutePreviewVisible,
   });
 
   final Office office;
   final RoutePreviewData? routePreview;
   final LatLng? originLatLng;
   final bool isRouteLoading;
+  final bool isRoutePreviewVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -254,17 +295,12 @@ class _EditorialHero extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          children: <Widget>[
-            _MapHero(
-              office: office,
-              routePreview: routePreview,
-              originLatLng: originLatLng,
-              isRouteLoading: isRouteLoading,
-            ),
-            const SizedBox(height: 12),
-            _HeroMetaPanel(office: office),
-          ],
+        child: _MapHero(
+          office: office,
+          routePreview: routePreview,
+          originLatLng: originLatLng,
+          isRouteLoading: isRouteLoading,
+          isRoutePreviewVisible: isRoutePreviewVisible,
         ),
       ),
     );
@@ -277,12 +313,14 @@ class _MapHero extends StatefulWidget {
     required this.routePreview,
     required this.originLatLng,
     required this.isRouteLoading,
+    required this.isRoutePreviewVisible,
   });
 
   final Office office;
   final RoutePreviewData? routePreview;
   final LatLng? originLatLng;
   final bool isRouteLoading;
+  final bool isRoutePreviewVisible;
 
   @override
   State<_MapHero> createState() => _MapHeroState();
@@ -297,7 +335,8 @@ class _MapHeroState extends State<_MapHero> {
     super.didUpdateWidget(oldWidget);
     final bool pointsChanged = oldWidget.routePreview?.points.length != widget.routePreview?.points.length;
     final bool originChanged = oldWidget.originLatLng != widget.originLatLng;
-    if (pointsChanged || originChanged) {
+    final bool visibilityChanged = oldWidget.isRoutePreviewVisible != widget.isRoutePreviewVisible;
+    if (pointsChanged || originChanged || visibilityChanged) {
       _hasAppliedRouteFit = false;
       _fitRouteBoundsIfPossible();
     }
@@ -310,7 +349,7 @@ class _MapHeroState extends State<_MapHero> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(
-        height: 244,
+        height: 328,
         child: Stack(
           children: <Widget>[
             Positioned.fill(
@@ -328,7 +367,7 @@ class _MapHeroState extends State<_MapHero> {
                       zoomControlsEnabled: false,
                       myLocationButtonEnabled: false,
                       markers: <Marker>{
-                        if (widget.originLatLng != null)
+                        if (widget.isRoutePreviewVisible && widget.originLatLng != null)
                           Marker(
                             markerId: const MarkerId('route-origin'),
                             position: widget.originLatLng!,
@@ -337,14 +376,15 @@ class _MapHeroState extends State<_MapHero> {
                               BitmapDescriptor.hueAzure,
                             ),
                           ),
-                        Marker(
-                          markerId: MarkerId(widget.office.id),
-                          position: LatLng(widget.office.lat!, widget.office.lng!),
-                          infoWindow: InfoWindow(title: widget.office.constituency),
-                        ),
+                        if (widget.isRoutePreviewVisible)
+                          Marker(
+                            markerId: MarkerId(widget.office.id),
+                            position: LatLng(widget.office.lat!, widget.office.lng!),
+                            infoWindow: InfoWindow(title: widget.office.constituency),
+                          ),
                       },
                       polylines: <Polyline>{
-                        if ((widget.routePreview?.points.length ?? 0) > 1)
+                        if (widget.isRoutePreviewVisible && (widget.routePreview?.points.length ?? 0) > 1)
                           Polyline(
                             polylineId: const PolylineId('office-preview-route'),
                             points: widget.routePreview!.points,
@@ -418,7 +458,7 @@ class _MapHeroState extends State<_MapHero> {
                     widget.office.officeLocation,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       height: 1.2,
                     ),
@@ -427,11 +467,13 @@ class _MapHeroState extends State<_MapHero> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    DistanceUtils.formatDistanceLabel(
-                      widget.office.distanceMeters,
-                      fallback: widget.office.estimatedDistanceText ?? 'Distance unavailable',
-                    ),
-                    style: const TextStyle(color: Colors.white70),
+                    widget.isRoutePreviewVisible
+                        ? 'In-app route preview on map'
+                        : DistanceUtils.formatDistanceLabel(
+                            widget.office.distanceMeters,
+                            fallback: widget.office.estimatedDistanceText ?? 'Distance unavailable',
+                          ),
+                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -467,6 +509,9 @@ class _MapHeroState extends State<_MapHero> {
     }
 
     final List<LatLng> routePoints = widget.routePreview?.points ?? <LatLng>[];
+    if (!widget.isRoutePreviewVisible || routePoints.length < 2) {
+      return;
+    }
     final List<LatLng> pointsForBounds = <LatLng>[
       if (widget.originLatLng != null) widget.originLatLng!,
       ...routePoints,
@@ -510,104 +555,6 @@ class _MapHeroState extends State<_MapHero> {
   }
 }
 
-class _HeroMetaPanel extends StatelessWidget {
-  const _HeroMetaPanel({required this.office});
-
-  final Office office;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: const Color(0xFFF7F7F7),
-        border: Border.all(color: colors.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _MetaStat(
-                  title: 'Constituency Office',
-                  value: office.constituency,
-                  icon: Icons.account_balance_rounded,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MetaStat(
-                  title: 'County',
-                  value: office.county,
-                  icon: Icons.map_rounded,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaStat extends StatelessWidget {
-  const _MetaStat({required this.title, required this.value, required this.icon});
-
-  final String title;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppTheme.red.withValues(alpha: 0.12),
-            ),
-            child: Icon(icon, color: AppTheme.red, size: 17),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: colors.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              height: 1.15,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PrimaryActionRow extends StatelessWidget {
   const _PrimaryActionRow({
     required this.office,
@@ -616,6 +563,8 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.routePreview,
     required this.routePreviewDebugError,
     required this.isRouteLoading,
+    required this.onPreviewRouteTap,
+    required this.isRoutePreviewVisible,
   });
 
   final Office office;
@@ -624,6 +573,8 @@ class _PrimaryActionRow extends StatelessWidget {
   final RoutePreviewData? routePreview;
   final String? routePreviewDebugError;
   final bool isRouteLoading;
+  final Future<void> Function() onPreviewRouteTap;
+  final bool isRoutePreviewVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -643,38 +594,9 @@ class _PrimaryActionRow extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            onPressed: canOpenDirections
-                ? () async {
-                    if (hasRoutePreview) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Showing in-app route preview.')),
-                      );
-                      return;
-                    }
-
-                    final DirectionsResult result = await directionsService.openDirections(
-                      lat: office.lat,
-                      lng: office.lng,
-                      flow: DirectionsFlow.externalGoogleMaps,
-                    );
-
-                    if (!result.isSuccess && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(_directionsErrorMessage(result.failure))),
-                      );
-                    } else if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'In-app preview unavailable right now. Opened Google Maps instead.',
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                : null,
+            onPressed: canOpenDirections ? onPreviewRouteTap : null,
             icon: const Icon(Icons.route_rounded),
-            label: const Text('Preview Route In-App'),
+            label: Text(hasRoutePreview && isRoutePreviewVisible ? 'Previewing Route In-App' : 'Preview Route In-App'),
           ),
         ),
         const SizedBox(height: 9),
@@ -694,7 +616,7 @@ class _PrimaryActionRow extends StatelessWidget {
 
                     if (!result.isSuccess && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(_directionsErrorMessage(result.failure))),
+                        SnackBar(content: Text(routeDirectionsErrorMessage(result.failure))),
                       );
                     }
                   }
@@ -741,16 +663,17 @@ class _PrimaryActionRow extends StatelessWidget {
     );
   }
 
-  String _directionsErrorMessage(DirectionsFailure? failure) {
-    switch (failure) {
-      case DirectionsFailure.invalidCoordinates:
-        return 'Directions unavailable: office coordinates are missing or invalid.';
-      case DirectionsFailure.unsupportedFlow:
-        return 'In-app route preview is not available yet.';
-      case DirectionsFailure.unableToLaunch:
-      case null:
-        return 'Unable to open Google Maps directions.';
-    }
+}
+
+String routeDirectionsErrorMessage(DirectionsFailure? failure) {
+  switch (failure) {
+    case DirectionsFailure.invalidCoordinates:
+      return 'Directions unavailable: office coordinates are missing or invalid.';
+    case DirectionsFailure.unsupportedFlow:
+      return 'In-app route preview is not available yet.';
+    case DirectionsFailure.unableToLaunch:
+    case null:
+      return 'Unable to open Google Maps directions.';
   }
 }
 
