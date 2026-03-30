@@ -663,6 +663,7 @@ class _PrimaryActionRow extends StatelessWidget {
           routePreview: routePreview,
           routePreviewDebugError: routePreviewDebugError,
           isRouteLoading: isRouteLoading,
+          isPreviewUnavailable: isPreviewUnavailable,
         ),
         const SizedBox(height: 9),
         SizedBox(
@@ -764,11 +765,13 @@ class _RouteSummaryCard extends StatelessWidget {
     required this.routePreview,
     required this.routePreviewDebugError,
     required this.isRouteLoading,
+    required this.isPreviewUnavailable,
   });
 
   final RoutePreviewData? routePreview;
   final String? routePreviewDebugError;
   final bool isRouteLoading;
+  final bool isPreviewUnavailable;
 
   @override
   Widget build(BuildContext context) {
