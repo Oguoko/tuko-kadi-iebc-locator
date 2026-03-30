@@ -47,6 +47,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _searchQuery = '';
   _LocationIssue? _locationIssue;
 
+  bool get _isControllerReady => _isMapReady && _mapController != null;
+
+  bool get _supportsMyLocationLayer => !kIsWeb;
+
   @override
   void initState() {
     super.initState();
@@ -203,7 +207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required LatLng target,
     required double zoom,
   }) {
-    if (!mounted || !_isMapReady) {
+    if (!mounted || !_isControllerReady) {
       return;
     }
 
@@ -212,20 +216,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    controller
-        .animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: target,
-              zoom: zoom,
+    try {
+      controller
+          .animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: target,
+                zoom: zoom,
+              ),
             ),
-          ),
-        )
-        .catchError((Object error) {
+          )
+          .catchError((Object error) {
+        if (kDebugMode) {
+          debugPrint('Map camera update skipped: $error');
+        }
+      });
+    } catch (error) {
       if (kDebugMode) {
-        debugPrint('Map camera update skipped: $error');
+        debugPrint('Map camera update failed before completion: $error');
       }
-    });
+    }
   }
 
   void _setSelectedOffice(Office office) {
@@ -343,6 +353,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final List<String> suggestions = _buildSuggestions(sortedOffices);
 
     final Set<Marker> markers = _buildMapMarkers(filteredOffices);
+    final Set<Polyline> polylines = const <Polyline>{};
     final bool mapBusy = officesAsync.isLoading || (_isLocating && !_isLocationReady);
     final _LocationIssue? activeLocationIssue = _locationIssue;
 
@@ -366,7 +377,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _centerMapToDefault();
               },
               markers: markers,
-              myLocationEnabled: _userLocation != null,
+              polylines: polylines,
+              myLocationEnabled: _supportsMyLocationLayer && _userLocation != null,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
@@ -1011,6 +1023,8 @@ class _MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final String? resolvedActionLabel = actionLabel;
+    final VoidCallback? resolvedActionPressed = onActionPressed;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -1045,12 +1059,12 @@ class _MessageCard extends StatelessWidget {
                     height: 1.35,
                   ),
             ),
-            if (actionLabel != null && onActionPressed != null) ...<Widget>[
+            if (resolvedActionLabel != null && resolvedActionPressed != null) ...<Widget>[
               const SizedBox(height: 16),
               FilledButton.tonalIcon(
-                onPressed: onActionPressed,
+                onPressed: resolvedActionPressed,
                 icon: const Icon(Icons.refresh_rounded),
-                label: Text(actionLabel!),
+                label: Text(resolvedActionLabel),
               ),
             ],
           ],
