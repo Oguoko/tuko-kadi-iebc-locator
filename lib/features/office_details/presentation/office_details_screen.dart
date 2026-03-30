@@ -32,6 +32,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
   String? _routePreviewDebugError;
   bool _isRouteLoading = false;
   bool _isRoutePreviewVisible = false;
+  bool _hasAttemptedRoutePreviewLoad = false;
 
   @override
   void initState() {
@@ -108,6 +109,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       }
       setState(() {
         _isRouteLoading = false;
+        _hasAttemptedRoutePreviewLoad = true;
       });
     }
   }
@@ -130,19 +132,12 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
         _isRoutePreviewVisible = true;
       });
     } else {
-      final Office? currentOffice = widget.office;
-      final DirectionsResult result = await widget.directionsService.openDirections(
-        lat: currentOffice?.lat,
-        lng: currentOffice?.lng,
-        flow: DirectionsFlow.externalGoogleMaps,
-      );
-
-      if (!mounted || result.isSuccess) {
-        return;
-      }
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(routeDirectionsErrorMessage(result.failure))),
+        const SnackBar(
+          content: Text(
+            'In-app route preview is unavailable right now. Use Open in Google Maps below.',
+          ),
+        ),
       );
     }
   }
@@ -176,6 +171,8 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 originLatLng: _originLatLng,
                 isRouteLoading: _isRouteLoading,
                 isRoutePreviewVisible: _isRoutePreviewVisible,
+                hasAttemptedRoutePreviewLoad: _hasAttemptedRoutePreviewLoad,
+                routePreviewDebugError: _routePreviewDebugError,
               ),
               const SizedBox(height: 18),
               _PrimaryActionRow(
@@ -187,6 +184,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 isRouteLoading: _isRouteLoading,
                 onPreviewRouteTap: _handlePreviewRouteTap,
                 isRoutePreviewVisible: _isRoutePreviewVisible,
+                hasAttemptedRoutePreviewLoad: _hasAttemptedRoutePreviewLoad,
               ),
               if (!canOpenDirections) ...<Widget>[
                 const SizedBox(height: 10),
@@ -271,6 +269,8 @@ class _EditorialHero extends StatelessWidget {
     required this.originLatLng,
     required this.isRouteLoading,
     required this.isRoutePreviewVisible,
+    required this.hasAttemptedRoutePreviewLoad,
+    required this.routePreviewDebugError,
   });
 
   final Office office;
@@ -278,6 +278,8 @@ class _EditorialHero extends StatelessWidget {
   final LatLng? originLatLng;
   final bool isRouteLoading;
   final bool isRoutePreviewVisible;
+  final bool hasAttemptedRoutePreviewLoad;
+  final String? routePreviewDebugError;
 
   @override
   Widget build(BuildContext context) {
@@ -301,6 +303,8 @@ class _EditorialHero extends StatelessWidget {
           originLatLng: originLatLng,
           isRouteLoading: isRouteLoading,
           isRoutePreviewVisible: isRoutePreviewVisible,
+          hasAttemptedRoutePreviewLoad: hasAttemptedRoutePreviewLoad,
+          routePreviewDebugError: routePreviewDebugError,
         ),
       ),
     );
@@ -314,6 +318,8 @@ class _MapHero extends StatefulWidget {
     required this.originLatLng,
     required this.isRouteLoading,
     required this.isRoutePreviewVisible,
+    required this.hasAttemptedRoutePreviewLoad,
+    required this.routePreviewDebugError,
   });
 
   final Office office;
@@ -321,6 +327,8 @@ class _MapHero extends StatefulWidget {
   final LatLng? originLatLng;
   final bool isRouteLoading;
   final bool isRoutePreviewVisible;
+  final bool hasAttemptedRoutePreviewLoad;
+  final String? routePreviewDebugError;
 
   @override
   State<_MapHero> createState() => _MapHeroState();
@@ -332,6 +340,9 @@ class _MapHeroState extends State<_MapHero> {
 
   bool get _hasRenderableRoute =>
       widget.isRoutePreviewVisible && (widget.routePreview?.points.length ?? 0) > 1;
+
+  bool get _showPreviewUnavailableState =>
+      widget.hasAttemptedRoutePreviewLoad && !widget.isRouteLoading && !_hasRenderableRoute;
 
   @override
   void didUpdateWidget(covariant _MapHero oldWidget) {
@@ -398,7 +409,7 @@ class _MapHeroState extends State<_MapHero> {
                             polylineId: const PolylineId('office-preview-route'),
                             points: widget.routePreview!.points,
                             color: AppTheme.red,
-                            width: 9,
+                            width: 12,
                             geodesic: true,
                             jointType: JointType.round,
                             startCap: Cap.roundCap,
@@ -504,6 +515,41 @@ class _MapHeroState extends State<_MapHero> {
                   ),
                 ),
               ),
+            if (_showPreviewUnavailableState)
+              Positioned(
+                left: 14,
+                right: 14,
+                top: 66,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(Icons.route_rounded, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          kDebugMode &&
+                                  widget.routePreviewDebugError != null &&
+                                  widget.routePreviewDebugError!.isNotEmpty
+                              ? 'Route preview unavailable. ${widget.routePreviewDebugError}'
+                              : 'Route preview unavailable. Use Open in Google Maps.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -592,6 +638,7 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.isRouteLoading,
     required this.onPreviewRouteTap,
     required this.isRoutePreviewVisible,
+    required this.hasAttemptedRoutePreviewLoad,
   });
 
   final Office office;
@@ -602,11 +649,13 @@ class _PrimaryActionRow extends StatelessWidget {
   final bool isRouteLoading;
   final Future<void> Function() onPreviewRouteTap;
   final bool isRoutePreviewVisible;
+  final bool hasAttemptedRoutePreviewLoad;
 
   @override
   Widget build(BuildContext context) {
     final bool hasRoutePreview = routePreview != null;
     final bool hasRenderableRoute = (routePreview?.points.length ?? 0) > 1;
+    final bool isPreviewUnavailable = hasAttemptedRoutePreviewLoad && !isRouteLoading && !hasRenderableRoute;
 
     return Column(
       children: <Widget>[
@@ -627,7 +676,9 @@ class _PrimaryActionRow extends StatelessWidget {
             label: Text(
               hasRoutePreview && isRoutePreviewVisible && hasRenderableRoute
                   ? 'Previewing Route In-App'
-                  : 'Preview Route In-App',
+                  : isPreviewUnavailable
+                      ? 'Route Preview Unavailable'
+                      : 'Preview Route In-App',
             ),
           ),
         ),
@@ -694,7 +745,6 @@ class _PrimaryActionRow extends StatelessWidget {
       ],
     );
   }
-
 }
 
 String routeDirectionsErrorMessage(DirectionsFailure? failure) {
@@ -767,7 +817,9 @@ class _RouteSummaryCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             routePreview == null
-                ? 'Live preview is still loading. We will fall back to Google Maps if needed.'
+                ? isPreviewUnavailable
+                    ? 'Route preview is currently unavailable. Use Open in Google Maps as fallback.'
+                    : 'Live preview is still loading. We will fall back to Google Maps if needed.'
                 : 'This map shows your in-app route preview.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
