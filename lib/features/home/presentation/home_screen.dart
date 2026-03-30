@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -93,7 +95,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
 
     try {
-      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final bool serviceEnabled = await _withWebLocationTimeout(
+        Geolocator.isLocationServiceEnabled(),
+      );
       if (!serviceEnabled) {
         if (!mounted) {
           return;
@@ -106,9 +110,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
+      LocationPermission permission = await _withWebLocationTimeout(
+        Geolocator.checkPermission(),
+      );
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission = await _withWebLocationTimeout(
+          Geolocator.requestPermission(),
+        );
       }
 
       if (permission == LocationPermission.denied) {
@@ -135,9 +143,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      final Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+      final Position position = await _withWebLocationTimeout(
+        Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
         ),
       );
 
@@ -181,6 +191,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         });
       }
     }
+  }
+
+  Future<T> _withWebLocationTimeout<T>(Future<T> future) {
+    if (!kIsWeb) {
+      return future;
+    }
+
+    return future.timeout(
+      const Duration(seconds: 12),
+      onTimeout: () => throw TimeoutException(
+        'Location request timed out on web',
+      ),
+    );
   }
 
   void _centerMapToUser() {
@@ -354,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final Set<Marker> markers = _buildMapMarkers(filteredOffices);
     final Set<Polyline> polylines = const <Polyline>{};
-    final bool mapBusy = officesAsync.isLoading || (_isLocating && !_isLocationReady);
+    final bool mapBusy = officesAsync.isLoading;
     final _LocationIssue? activeLocationIssue = _locationIssue;
 
     return Scaffold(
