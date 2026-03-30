@@ -32,6 +32,8 @@ class GoogleRoutesService {
 
   static const String _endpoint =
       'https://routes.googleapis.com/directions/v2:computeRoutes';
+  static const String _responseFieldMask =
+      'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline';
 
   final http.Client _client;
   final String _apiKey;
@@ -44,7 +46,9 @@ class GoogleRoutesService {
   }) async {
     if (_apiKey.isEmpty) {
       throw const RoutesApiException(
-        'Google Routes API key is missing. Pass --dart-define=GOOGLE_ROUTES_API_KEY=your_key.',
+        'Route preview fallback reason: missing API key. '
+        'Pass --dart-define=GOOGLE_ROUTES_API_KEY=your_key.',
+        fallbackReason: RouteFallbackReason.missingApiKey,
       );
     }
     _validateCoordinates(
@@ -84,31 +88,27 @@ class GoogleRoutesService {
       headers: <String, String>{
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': _apiKey,
-        'X-Goog-FieldMask':
-            'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.viewport',
+        'X-Goog-FieldMask': _responseFieldMask,
       },
       body: jsonEncode(requestBody),
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final String failureMessage;
-      if (response.statusCode == 403) {
-        failureMessage =
-            'Google Routes API returned HTTP 403 (Forbidden). '
-            'For web builds, verify Routes API is enabled, billing is active, and API key restrictions allow '
-            'routes.googleapis.com from this origin.';
-      } else {
-        failureMessage = 'Failed to compute route preview (${response.statusCode}).';
-      }
+      final _RoutesFailure failure = _classifyFailure(response);
       if (kDebugMode) {
-        debugPrint('Google Routes computeRoutes failed.');
-        debugPrint('Status: ${response.statusCode}');
+        debugPrint('Google Routes computeRoutes request failed.');
         debugPrint('Endpoint: $uri');
-        debugPrint('Request body: ${jsonEncode(requestBody)}');
+        debugPrint('Method: POST');
+        debugPrint('Field mask: $_responseFieldMask');
+        debugPrint('HTTP status: ${response.statusCode}');
+        debugPrint('Fallback reason: ${failure.reason.name}');
+        debugPrint('Request JSON: ${jsonEncode(requestBody)}');
         debugPrint('Response body (${response.bodyBytes.length} bytes): ${response.body}');
-        debugPrint('Developer message: $failureMessage');
       }
-      throw RoutesApiException(failureMessage);
+      throw RoutesApiException(
+        failure.message,
+        fallbackReason: failure.reason,
+      );
     }
 
     final Object? decoded = jsonDecode(response.body);
@@ -255,17 +255,128 @@ class GoogleRoutesService {
         destinationLng <= 180;
     if (!isValidOrigin || !isValidDestination) {
       throw const RoutesApiException(
-        'Cannot compute route preview: origin or destination coordinates are invalid.',
+        'Route preview fallback reason: malformed request. '
+        'Origin or destination coordinates are invalid.',
+        fallbackReason: RouteFallbackReason.malformedRequest,
       );
+    }
+  }
+
+  _RoutesFailure _classifyFailure(http.Response response) {
+    final _ApiErrorDetails details = _parseApiError(response.body);
+    final int statusCode = response.statusCode;
+    final String statusText = details.status.toUpperCase();
+    final String combinedText = '${details.message} ${response.body}'.toLowerCase();
+    final bool hasBillingSignal =
+        combinedText.contains('billing') || combinedText.contains('billing_disabled');
+    final bool hasApiEnablementSignal =
+        combinedText.contains('service_disabled') ||
+        combinedText.contains('api has not been used') ||
+        combinedText.contains('is not enabled') ||
+        combinedText.contains('routes api has not been used');
+
+    if (statusCode == 400 || statusText == 'INVALID_ARGUMENT') {
+      return const _RoutesFailure(
+        reason: RouteFallbackReason.malformedRequest,
+        message:
+            'Route preview fallback reason: malformed request. '
+            'Google Routes rejected request parameters (HTTP 400 / INVALID_ARGUMENT).',
+      );
+    }
+
+    if (hasBillingSignal) {
+      return const _RoutesFailure(
+        reason: RouteFallbackReason.missingBilling,
+        message:
+            'Route preview fallback reason: missing billing. '
+            'Enable billing for the Google Cloud project used by GOOGLE_ROUTES_API_KEY.',
+      );
+    }
+
+    if (hasApiEnablementSignal) {
+      return const _RoutesFailure(
+        reason: RouteFallbackReason.missingApiEnablement,
+        message:
+            'Route preview fallback reason: missing API enablement. '
+            'Enable the Routes API for this key/project in Google Cloud.',
+      );
+    }
+
+    if (statusCode == 403 || statusText == 'PERMISSION_DENIED') {
+      return const _RoutesFailure(
+        reason: RouteFallbackReason.permissionDenied,
+        message:
+            'Route preview fallback reason: 403 permission issue. '
+            'Check API key restrictions (HTTP referrer/app restrictions) and allowed APIs.',
+      );
+    }
+
+    return _RoutesFailure(
+      reason: RouteFallbackReason.unknown,
+      message:
+          'Route preview fallback reason: unexpected error '
+          '(HTTP $statusCode${details.status.isEmpty ? '' : ' / ${details.status}'}).',
+    );
+  }
+
+  _ApiErrorDetails _parseApiError(String body) {
+    try {
+      final Object? decoded = jsonDecode(body);
+      if (decoded is! Map<String, dynamic>) {
+        return const _ApiErrorDetails();
+      }
+      final Object? error = decoded['error'];
+      if (error is! Map<String, dynamic>) {
+        return const _ApiErrorDetails();
+      }
+      return _ApiErrorDetails(
+        status: error['status']?.toString() ?? '',
+        message: error['message']?.toString() ?? '',
+      );
+    } catch (_) {
+      return const _ApiErrorDetails();
     }
   }
 }
 
+enum RouteFallbackReason {
+  missingApiEnablement,
+  permissionDenied,
+  missingBilling,
+  malformedRequest,
+  missingApiKey,
+  unknown,
+}
+
 class RoutesApiException implements Exception {
-  const RoutesApiException(this.message);
+  const RoutesApiException(
+    this.message, {
+    this.fallbackReason = RouteFallbackReason.unknown,
+  });
 
   final String message;
+  final RouteFallbackReason fallbackReason;
 
   @override
   String toString() => message;
+}
+
+class _RoutesFailure {
+  const _RoutesFailure({
+    required this.reason,
+    required this.message,
+  });
+
+  final RouteFallbackReason reason;
+  final String message;
+}
+
+class _ApiErrorDetails {
+  const _ApiErrorDetails({
+    this.status = '',
+    this.message = '',
+  });
+
+  final String status;
+  final String message;
 }
