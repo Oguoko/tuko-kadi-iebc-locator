@@ -141,6 +141,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
+      final bool hasValidCoordinates = OfficeCoordinateValidator.hasValidWorldBounds(
+        position.latitude,
+        position.longitude,
+      );
+      if (!hasValidCoordinates) {
+        setState(() {
+          _isLocationReady = true;
+          _locationIssue = _LocationIssue.unavailable;
+          _userLocation = null;
+        });
+        _centerMapToDefault();
+        return;
+      }
+
       setState(() {
         _userLocation = LatLng(position.latitude, position.longitude);
         _isLocationReady = true;
@@ -330,6 +344,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final Set<Marker> markers = _buildMapMarkers(filteredOffices);
     final bool mapBusy = officesAsync.isLoading || (_isLocating && !_isLocationReady);
+    final _LocationIssue? activeLocationIssue = _locationIssue;
 
     return Scaffold(
       body: Stack(
@@ -429,13 +444,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const FilterChipRow(),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
-                    child: _locationIssue == null
+                    child: activeLocationIssue == null
                         ? const SizedBox.shrink()
                         : Padding(
-                            key: ValueKey<_LocationIssue>(_locationIssue!),
+                            key: ValueKey<_LocationIssue>(activeLocationIssue),
                             padding: const EdgeInsets.only(top: 12),
                             child: _LocationIssueBanner(
-                              copy: _locationCopyForIssue(_locationIssue!),
+                              copy: _locationCopyForIssue(activeLocationIssue),
                               isRetrying: _isLocating,
                               onRetry: _loadUserLocation,
                             ),
@@ -735,7 +750,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final LatLng? userLocation = _userLocation;
-    if (userLocation != null) {
+    if (userLocation != null &&
+        OfficeCoordinateValidator.hasValidWorldBounds(
+          userLocation.latitude,
+          userLocation.longitude,
+        )) {
       markers.add(
         Marker(
           markerId: const MarkerId('user-location'),
