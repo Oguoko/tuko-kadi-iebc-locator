@@ -5,7 +5,7 @@ plugins {
     // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id("dev.flut[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ter.flutter-gradle-plugin")
+    id("dev.flutter.flutter-gradle-plugin")
 }
 
 fun mapApiKey(): String {
