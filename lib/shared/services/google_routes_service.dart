@@ -9,11 +9,13 @@ class RoutePreviewData {
     required this.points,
     required this.distanceMeters,
     required this.duration,
+    this.bounds,
   });
 
   final List<LatLng> points;
   final int? distanceMeters;
   final Duration? duration;
+  final LatLngBounds? bounds;
 }
 
 class GoogleRoutesService {
@@ -83,7 +85,7 @@ class GoogleRoutesService {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': _apiKey,
         'X-Goog-FieldMask':
-            'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
+            'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.viewport',
       },
       body: jsonEncode(requestBody),
     );
@@ -132,6 +134,7 @@ class GoogleRoutesService {
       points: _decodePolyline(encodedPolyline),
       distanceMeters: _asInt(firstRoute['distanceMeters']),
       duration: _parseDuration(firstRoute['duration'] as String?),
+      bounds: _parseBounds(firstRoute['viewport']),
     );
   }
 
@@ -192,6 +195,42 @@ class GoogleRoutesService {
     }
 
     return Duration(milliseconds: (seconds * 1000).round());
+  }
+
+  LatLngBounds? _parseBounds(Object? raw) {
+    if (raw is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final LatLng? low = _parseLatLng(raw['low']);
+    final LatLng? high = _parseLatLng(raw['high']);
+    if (low == null || high == null) {
+      return null;
+    }
+    return LatLngBounds(southwest: low, northeast: high);
+  }
+
+  LatLng? _parseLatLng(Object? raw) {
+    if (raw is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final double? lat = _asDouble(raw['latitude']);
+    final double? lng = _asDouble(raw['longitude']);
+    if (lat == null || lng == null) {
+      return null;
+    }
+    return LatLng(lat, lng);
+  }
+
+  double? _asDouble(Object? raw) {
+    if (raw is double) {
+      return raw;
+    }
+    if (raw is int) {
+      return raw.toDouble();
+    }
+    return double.tryParse(raw?.toString() ?? '');
   }
 
   void _validateCoordinates({
