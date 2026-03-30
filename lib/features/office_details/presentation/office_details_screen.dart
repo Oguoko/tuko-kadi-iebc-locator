@@ -125,7 +125,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       return;
     }
 
-    if (_routePreview != null && (_routePreview!.points.length > 1 || _originLatLng != null)) {
+    if (_routePreview != null && _originLatLng != null && _routePreview!.points.length > 1) {
       setState(() {
         _isRoutePreviewVisible = true;
       });
@@ -330,6 +330,9 @@ class _MapHeroState extends State<_MapHero> {
   GoogleMapController? _mapController;
   bool _hasAppliedRouteFit = false;
 
+  bool get _hasRenderableRoute =>
+      widget.isRoutePreviewVisible && (widget.routePreview?.points.length ?? 0) > 1;
+
   @override
   void didUpdateWidget(covariant _MapHero oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -367,29 +370,39 @@ class _MapHeroState extends State<_MapHero> {
                       zoomControlsEnabled: false,
                       myLocationButtonEnabled: false,
                       markers: <Marker>{
-                        if (widget.isRoutePreviewVisible && widget.originLatLng != null)
+                        if (_hasRenderableRoute && widget.originLatLng != null)
                           Marker(
                             markerId: const MarkerId('route-origin'),
                             position: widget.originLatLng!,
                             infoWindow: const InfoWindow(title: 'Your location'),
                             icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueAzure,
+                              BitmapDescriptor.hueBlue,
                             ),
                           ),
-                        if (widget.isRoutePreviewVisible)
+                        if (_hasRenderableRoute)
                           Marker(
-                            markerId: MarkerId(widget.office.id),
+                            markerId: const MarkerId('route-destination'),
                             position: LatLng(widget.office.lat!, widget.office.lng!),
-                            infoWindow: InfoWindow(title: widget.office.constituency),
+                            infoWindow: InfoWindow(
+                              title: widget.office.constituency,
+                              snippet: 'IEBC Office',
+                            ),
+                            icon: BitmapDescriptor.defaultMarkerWithHue(
+                              BitmapDescriptor.hueRed,
+                            ),
                           ),
                       },
                       polylines: <Polyline>{
-                        if (widget.isRoutePreviewVisible && (widget.routePreview?.points.length ?? 0) > 1)
+                        if (_hasRenderableRoute)
                           Polyline(
                             polylineId: const PolylineId('office-preview-route'),
                             points: widget.routePreview!.points,
                             color: AppTheme.red,
-                            width: 5,
+                            width: 9,
+                            geodesic: true,
+                            jointType: JointType.round,
+                            startCap: Cap.roundCap,
+                            endCap: Cap.roundCap,
                           ),
                       },
                     )
@@ -467,7 +480,7 @@ class _MapHeroState extends State<_MapHero> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    widget.isRoutePreviewVisible
+                    _hasRenderableRoute
                         ? 'In-app route preview on map'
                         : DistanceUtils.formatDistanceLabel(
                             widget.office.distanceMeters,
@@ -509,24 +522,44 @@ class _MapHeroState extends State<_MapHero> {
     }
 
     final List<LatLng> routePoints = widget.routePreview?.points ?? <LatLng>[];
-    if (!widget.isRoutePreviewVisible || routePoints.length < 2) {
-      return;
-    }
-    final List<LatLng> pointsForBounds = <LatLng>[
-      if (widget.originLatLng != null) widget.originLatLng!,
-      ...routePoints,
-      LatLng(lat, lng),
-    ];
-    if (pointsForBounds.length < 2) {
+    if (!_hasRenderableRoute) {
       return;
     }
 
-    double minLat = pointsForBounds.first.latitude;
-    double maxLat = pointsForBounds.first.latitude;
-    double minLng = pointsForBounds.first.longitude;
-    double maxLng = pointsForBounds.first.longitude;
+    LatLngBounds? fitBounds = widget.routePreview?.bounds;
+    if (fitBounds == null && widget.originLatLng != null) {
+      fitBounds = _boundsFromPoints(<LatLng>[
+        widget.originLatLng!,
+        LatLng(lat, lng),
+      ]);
+    }
+    if (fitBounds == null && routePoints.length > 1) {
+      fitBounds = _boundsFromPoints(routePoints);
+    }
+    if (fitBounds == null) {
+      return;
+    }
 
-    for (final LatLng point in pointsForBounds.skip(1)) {
+    _hasAppliedRouteFit = true;
+    await controller.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        fitBounds,
+        58,
+      ),
+    );
+  }
+
+  LatLngBounds? _boundsFromPoints(List<LatLng> points) {
+    if (points.length < 2) {
+      return null;
+    }
+
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
+    for (final LatLng point in points.skip(1)) {
       minLat = point.latitude < minLat ? point.latitude : minLat;
       maxLat = point.latitude > maxLat ? point.latitude : maxLat;
       minLng = point.longitude < minLng ? point.longitude : minLng;
@@ -542,15 +575,9 @@ class _MapHeroState extends State<_MapHero> {
       maxLng += 0.0015;
     }
 
-    _hasAppliedRouteFit = true;
-    await controller.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng),
-        ),
-        58,
-      ),
+    return LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
     );
   }
 }
@@ -579,6 +606,7 @@ class _PrimaryActionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasRoutePreview = routePreview != null;
+    final bool hasRenderableRoute = (routePreview?.points.length ?? 0) > 1;
 
     return Column(
       children: <Widget>[
@@ -596,7 +624,11 @@ class _PrimaryActionRow extends StatelessWidget {
             ),
             onPressed: canOpenDirections ? onPreviewRouteTap : null,
             icon: const Icon(Icons.route_rounded),
-            label: Text(hasRoutePreview && isRoutePreviewVisible ? 'Previewing Route In-App' : 'Preview Route In-App'),
+            label: Text(
+              hasRoutePreview && isRoutePreviewVisible && hasRenderableRoute
+                  ? 'Previewing Route In-App'
+                  : 'Preview Route In-App',
+            ),
           ),
         ),
         const SizedBox(height: 9),
