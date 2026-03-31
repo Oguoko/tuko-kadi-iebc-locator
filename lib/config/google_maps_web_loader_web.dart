@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:html' as html;
 
-const String _mapsWebApiKey = String.fromEnvironment('GOOGLE_MAPS_WEB_API_KEY');
+const String _mapsWebApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
 
 Future<void> loadGoogleMapsApiForWeb() async {
   if (_mapsWebApiKey.isEmpty) {
