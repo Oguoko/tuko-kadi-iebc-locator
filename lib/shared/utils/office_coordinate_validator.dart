@@ -24,10 +24,10 @@ abstract final class OfficeCoordinateValidator {
   }
 
   static bool isValidOfficeCoordinate(double? lat, double? lng) {
-    if (!hasValidWorldBounds(lat, lng)) {
+    if (!hasValidWorldBounds(lat, lng) || lat == null || lng == null) {
       return false;
     }
 
-    return isWithinKenyaBounds(lat!, lng!);
+    return isWithinKenyaBounds(lat, lng);
   }
 }

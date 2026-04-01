@@ -50,6 +50,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
+<<<<<<< HEAD
     apiKey: 'AIzaSyAeuMT94BwbHN2wj_vWaWtv8uO3nDh2gnc',
     appId: '1:116154423720:web:ebd91e4485204b3243e59d',
     messagingSenderId: '116154423720',
@@ -65,6 +66,59 @@ class DefaultFirebaseOptions {
     messagingSenderId: '116154423720',
     projectId: 'tuko-kadi-iebc-locator',
     storageBucket: 'tuko-kadi-iebc-locator.firebasestorage.app',
+=======
+    apiKey: String.fromEnvironment(
+      'FIREBASE_WEB_API_KEY',
+      defaultValue: 'AIzaSyAeuMT94BwbHN2wj_vWaWtv8uO3nDh2gnc',
+    ),
+    appId: String.fromEnvironment(
+      'FIREBASE_WEB_APP_ID',
+      defaultValue: '1:116154423720:web:ebd91e4485204b3243e59d',
+    ),
+    messagingSenderId: String.fromEnvironment(
+      'FIREBASE_WEB_MESSAGING_SENDER_ID',
+      defaultValue: '116154423720',
+    ),
+    projectId: String.fromEnvironment(
+      'FIREBASE_WEB_PROJECT_ID',
+      defaultValue: 'tuko-kadi-iebc-locator',
+    ),
+    authDomain: String.fromEnvironment(
+      'FIREBASE_WEB_AUTH_DOMAIN',
+      defaultValue: 'tuko-kadi-iebc-locator.firebaseapp.com',
+    ),
+    storageBucket: String.fromEnvironment(
+      'FIREBASE_WEB_STORAGE_BUCKET',
+      defaultValue: 'tuko-kadi-iebc-locator.firebasestorage.app',
+    ),
+    measurementId: String.fromEnvironment(
+      'FIREBASE_WEB_MEASUREMENT_ID',
+      defaultValue: 'G-0F94NJBYL4',
+    ),
+  );
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: String.fromEnvironment(
+      'FIREBASE_ANDROID_API_KEY',
+      defaultValue: 'AIzaSyDpmJ1U3n6DGg259G6tiikFDScAgz8GNuI',
+    ),
+    appId: String.fromEnvironment(
+      'FIREBASE_ANDROID_APP_ID',
+      defaultValue: '1:116154423720:android:6f6a0f6204f2641743e59d',
+    ),
+    messagingSenderId: String.fromEnvironment(
+      'FIREBASE_ANDROID_MESSAGING_SENDER_ID',
+      defaultValue: '116154423720',
+    ),
+    projectId: String.fromEnvironment(
+      'FIREBASE_ANDROID_PROJECT_ID',
+      defaultValue: 'tuko-kadi-iebc-locator',
+    ),
+    storageBucket: String.fromEnvironment(
+      'FIREBASE_ANDROID_STORAGE_BUCKET',
+      defaultValue: 'tuko-kadi-iebc-locator.firebasestorage.app',
+    ),
+>>>>>>> 9e71133a7a01cad9c5f79eef5e46b4ee36301c6a
   );
 
 }

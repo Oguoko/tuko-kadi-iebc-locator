@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +49,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _searchQuery = '';
   _LocationIssue? _locationIssue;
 
+  bool get _isControllerReady => _isMapReady && _mapController != null;
+
+  bool get _supportsMyLocationLayer => !kIsWeb;
+
   @override
   void initState() {
     super.initState();
@@ -89,7 +95,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
 
     try {
-      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final bool serviceEnabled = await _withWebLocationTimeout(
+        Geolocator.isLocationServiceEnabled(),
+      );
       if (!serviceEnabled) {
         if (!mounted) {
           return;
@@ -102,9 +110,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
+      LocationPermission permission = await _withWebLocationTimeout(
+        Geolocator.checkPermission(),
+      );
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission = await _withWebLocationTimeout(
+          Geolocator.requestPermission(),
+        );
       }
 
       if (permission == LocationPermission.denied) {
@@ -131,13 +143,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return;
       }
 
-      final Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+      final Position position = await _withWebLocationTimeout(
+        Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
         ),
       );
 
       if (!mounted) {
+        return;
+      }
+
+      final bool hasValidCoordinates = OfficeCoordinateValidator.hasValidWorldBounds(
+        position.latitude,
+        position.longitude,
+      );
+      if (!hasValidCoordinates) {
+        setState(() {
+          _isLocationReady = true;
+          _locationIssue = _LocationIssue.unavailable;
+          _userLocation = null;
+        });
+        _centerMapToDefault();
         return;
       }
 
@@ -165,6 +193,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<T> _withWebLocationTimeout<T>(Future<T> future) {
+    if (!kIsWeb) {
+      return future;
+    }
+
+    return future.timeout(
+      const Duration(seconds: 12),
+      onTimeout: () => throw TimeoutException(
+        'Location request timed out on web',
+      ),
+    );
+  }
+
   void _centerMapToUser() {
     final LatLng? userLocation = _userLocation;
 
@@ -189,7 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required LatLng target,
     required double zoom,
   }) {
-    if (!mounted || !_isMapReady) {
+    if (!mounted || !_isControllerReady) {
       return;
     }
 
@@ -198,20 +239,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    controller
-        .animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: target,
-              zoom: zoom,
+    try {
+      controller
+          .animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: target,
+                zoom: zoom,
+              ),
             ),
-          ),
-        )
-        .catchError((Object error) {
+          )
+          .catchError((Object error) {
+        if (kDebugMode) {
+          debugPrint('Map camera update skipped: $error');
+        }
+      });
+    } catch (error) {
       if (kDebugMode) {
-        debugPrint('Map camera update skipped: $error');
+        debugPrint('Map camera update failed before completion: $error');
       }
-    });
+    }
   }
 
   void _setSelectedOffice(Office office) {
@@ -329,7 +376,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final List<String> suggestions = _buildSuggestions(sortedOffices);
 
     final Set<Marker> markers = _buildMapMarkers(filteredOffices);
-    final bool mapBusy = officesAsync.isLoading || (_isLocating && !_isLocationReady);
+    final Set<Polyline> polylines = const <Polyline>{};
+    final bool mapBusy = officesAsync.isLoading;
+    final _LocationIssue? activeLocationIssue = _locationIssue;
 
     return Scaffold(
       body: Stack(
@@ -351,7 +400,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _centerMapToDefault();
               },
               markers: markers,
-              myLocationEnabled: _userLocation != null,
+              polylines: polylines,
+              myLocationEnabled: _supportsMyLocationLayer && _userLocation != null,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
@@ -429,13 +479,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const FilterChipRow(),
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
-                    child: _locationIssue == null
+                    child: activeLocationIssue == null
                         ? const SizedBox.shrink()
                         : Padding(
-                            key: ValueKey<_LocationIssue>(_locationIssue!),
+                            key: ValueKey<_LocationIssue>(activeLocationIssue),
                             padding: const EdgeInsets.only(top: 12),
                             child: _LocationIssueBanner(
-                              copy: _locationCopyForIssue(_locationIssue!),
+                              copy: _locationCopyForIssue(activeLocationIssue),
                               isRetrying: _isLocating,
                               onRetry: _loadUserLocation,
                             ),
@@ -735,7 +785,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final LatLng? userLocation = _userLocation;
-    if (userLocation != null) {
+    if (userLocation != null &&
+        OfficeCoordinateValidator.hasValidWorldBounds(
+          userLocation.latitude,
+          userLocation.longitude,
+        )) {
       markers.add(
         Marker(
           markerId: const MarkerId('user-location'),
@@ -992,6 +1046,8 @@ class _MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final String? resolvedActionLabel = actionLabel;
+    final VoidCallback? resolvedActionPressed = onActionPressed;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -1026,12 +1082,12 @@ class _MessageCard extends StatelessWidget {
                     height: 1.35,
                   ),
             ),
-            if (actionLabel != null && onActionPressed != null) ...<Widget>[
+            if (resolvedActionLabel != null && resolvedActionPressed != null) ...<Widget>[
               const SizedBox(height: 16),
               FilledButton.tonalIcon(
-                onPressed: onActionPressed,
+                onPressed: resolvedActionPressed,
                 icon: const Icon(Icons.refresh_rounded),
-                label: Text(actionLabel!),
+                label: Text(resolvedActionLabel),
               ),
             ],
           ],
