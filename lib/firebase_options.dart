@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
 <<<<<<< HEAD
-    apiKey: 'AIzaSyAeuMT94BwbHN2wj_vWaWtv8uO3nDh2gnc',
+    apiKey: String.fromEnvironment('MAPS_API_KEY'),
     appId: '1:116154423720:web:ebd91e4485204b3243e59d',
     messagingSenderId: '116154423720',
     projectId: 'tuko-kadi-iebc-locator',
