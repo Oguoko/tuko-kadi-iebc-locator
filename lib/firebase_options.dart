@@ -5,15 +5,6 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -23,24 +14,11 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'This platform is not configured for Firebase.',
         );
       default:
         throw UnsupportedError(
@@ -49,27 +27,11 @@ class DefaultFirebaseOptions {
     }
   }
 
+  /// Web config
   static const FirebaseOptions web = FirebaseOptions(
-<<<<<<< HEAD
-    apiKey: String.fromEnvironment('MAPS_API_KEY'),
-    appId: '1:116154423720:web:ebd91e4485204b3243e59d',
-    messagingSenderId: '116154423720',
-    projectId: 'tuko-kadi-iebc-locator',
-    authDomain: 'tuko-kadi-iebc-locator.firebaseapp.com',
-    storageBucket: 'tuko-kadi-iebc-locator.firebasestorage.app',
-    measurementId: 'G-0F94NJBYL4',
-  );
-
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDpmJ1U3n6DGg259G6tiikFDScAgz8GNuI',
-    appId: '1:116154423720:android:6f6a0f6204f2641743e59d',
-    messagingSenderId: '116154423720',
-    projectId: 'tuko-kadi-iebc-locator',
-    storageBucket: 'tuko-kadi-iebc-locator.firebasestorage.app',
-=======
     apiKey: String.fromEnvironment(
       'FIREBASE_WEB_API_KEY',
-      defaultValue: 'AIzaSyAeuMT94BwbHN2wj_vWaWtv8uO3nDh2gnc',
+      defaultValue: '',
     ),
     appId: String.fromEnvironment(
       'FIREBASE_WEB_APP_ID',
@@ -97,10 +59,11 @@ class DefaultFirebaseOptions {
     ),
   );
 
+  /// Android config
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: String.fromEnvironment(
       'FIREBASE_ANDROID_API_KEY',
-      defaultValue: 'AIzaSyDpmJ1U3n6DGg259G6tiikFDScAgz8GNuI',
+      defaultValue: '',
     ),
     appId: String.fromEnvironment(
       'FIREBASE_ANDROID_APP_ID',
@@ -118,7 +81,5 @@ class DefaultFirebaseOptions {
       'FIREBASE_ANDROID_STORAGE_BUCKET',
       defaultValue: 'tuko-kadi-iebc-locator.firebasestorage.app',
     ),
->>>>>>> 9e71133a7a01cad9c5f79eef5e46b4ee36301c6a
   );
-
 }
