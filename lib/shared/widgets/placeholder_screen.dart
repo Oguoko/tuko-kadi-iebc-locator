@@ -42,7 +42,7 @@ class PlaceholderScreen extends StatelessWidget {
             Text(description, style: textTheme.bodyLarge),
             if (child != null) ...<Widget>[
               const SizedBox(height: 20),
-              child!,
+              child ?? const SizedBox.shrink(),
             ],
           ],
         ),
