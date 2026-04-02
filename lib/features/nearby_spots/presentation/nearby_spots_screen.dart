@@ -32,13 +32,15 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
 
   Future<List<NearbySpot>> _loadNearbySpots() {
     final Office? office = widget.office;
-    if (office == null || office.lat == null || office.lng == null) {
+    final double? latitude = office?.lat;
+    final double? longitude = office?.lng;
+    if (office == null || latitude == null || longitude == null) {
       return Future<List<NearbySpot>>.value(<NearbySpot>[]);
     }
 
     return _placesService.fetchNearbySpots(
-      latitude: office.lat!,
-      longitude: office.lng!,
+      latitude: latitude,
+      longitude: longitude,
       category: _selectedCategory,
     );
   }
@@ -240,7 +242,7 @@ class _SpotsHero extends StatelessWidget {
                       Text(
                         office == null
                             ? 'Select an office to explore places nearby.'
-                            : '${office!.constituency} • ${office!.county}',
+                            : '${office.constituency} • ${office.county}',
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -341,7 +343,7 @@ class _NearbySpotCard extends StatelessWidget {
                     child: imageUrl == null
                         ? const _SpotImagePlaceholder(icon: Icons.image_not_supported_rounded)
                         : Image.network(
-                            imageUrl!,
+                            imageUrl ?? '',
                             fit: BoxFit.cover,
                             loadingBuilder: (
                               BuildContext context,
@@ -460,6 +462,8 @@ class _InfoState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? resolvedActionLabel = actionLabel;
+
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
@@ -481,11 +485,11 @@ class _InfoState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            if (actionLabel != null && onActionPressed != null) ...<Widget>[
+            if (resolvedActionLabel != null && onActionPressed != null) ...<Widget>[
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: onActionPressed,
-                child: Text(actionLabel!),
+                child: Text(resolvedActionLabel),
               ),
             ],
           ],

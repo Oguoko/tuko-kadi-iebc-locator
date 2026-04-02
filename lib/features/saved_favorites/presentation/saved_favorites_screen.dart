@@ -133,6 +133,8 @@ class _SavedItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? badgeText = badge;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
@@ -148,14 +150,17 @@ class _SavedItemCard extends StatelessWidget {
         title: Row(
           children: <Widget>[
             Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800))),
-            if (badge != null)
+            if (badgeText != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(badge!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                child: Text(
+                  badgeText,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
               ),
           ],
         ),

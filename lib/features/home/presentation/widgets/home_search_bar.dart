@@ -116,6 +116,7 @@ class HomeSearchBar extends StatelessWidget {
                         ),
                         itemBuilder: (BuildContext context, int index) {
                           final String suggestion = suggestions[index];
+                          final ValueChanged<String>? onSuggestionSelected = onSuggestionTap;
                           return ListTile(
                             dense: true,
                             leading: Icon(
@@ -129,9 +130,9 @@ class HomeSearchBar extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
-                            onTap: onSuggestionTap == null
+                            onTap: onSuggestionSelected == null
                                 ? null
-                                : () => onSuggestionTap!(suggestion),
+                                : () => onSuggestionSelected(suggestion),
                           );
                         },
                       ),

@@ -48,9 +48,14 @@ class DirectionsService {
 
     switch (flow ?? defaultFlow) {
       case DirectionsFlow.externalGoogleMaps:
+        final double? destinationLat = lat;
+        final double? destinationLng = lng;
+        if (destinationLat == null || destinationLng == null) {
+          return const DirectionsResult.failure(DirectionsFailure.invalidCoordinates);
+        }
         final bool launched = await GoogleMapsDirections.openDirections(
-          lat: lat!,
-          lng: lng!,
+          lat: destinationLat,
+          lng: destinationLng,
         );
         return launched
             ? const DirectionsResult.success()

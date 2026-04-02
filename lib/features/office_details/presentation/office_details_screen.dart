@@ -42,7 +42,9 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
 
   Future<void> _loadRoutePreview() async {
     final Office? currentOffice = widget.office;
-    if (currentOffice == null || currentOffice.lat == null || currentOffice.lng == null) {
+    final double? destinationLat = currentOffice?.lat;
+    final double? destinationLng = currentOffice?.lng;
+    if (currentOffice == null || destinationLat == null || destinationLng == null) {
       return;
     }
 
@@ -70,8 +72,8 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       final RoutePreviewData? preview = await widget.routesService.computeRoute(
         originLat: position.latitude,
         originLng: position.longitude,
-        destinationLat: currentOffice.lat!,
-        destinationLng: currentOffice.lng!,
+        destinationLat: destinationLat,
+        destinationLng: destinationLng,
       );
 
       if (!mounted) {
@@ -127,7 +129,8 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       return;
     }
 
-    if (_routePreview != null && _originLatLng != null && _routePreview!.points.length > 1) {
+    final RoutePreviewData? routePreview = _routePreview;
+    if (routePreview != null && _originLatLng != null && routePreview.points.length > 1) {
       setState(() {
         _isRoutePreviewVisible = true;
       });
@@ -358,7 +361,13 @@ class _MapHeroState extends State<_MapHero> {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasCoordinates = widget.office.lat != null && widget.office.lng != null;
+    final double? officeLat = widget.office.lat;
+    final double? officeLng = widget.office.lng;
+    final LatLng? officeLatLng = officeLat == null || officeLng == null ? null : LatLng(officeLat, officeLng);
+    final LatLng? originLatLng = widget.originLatLng;
+    final RoutePreviewData? routePreview = widget.routePreview;
+    final String debugError = widget.routePreviewDebugError ?? '';
+    final bool hasDebugError = debugError.isNotEmpty;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -367,10 +376,10 @@ class _MapHeroState extends State<_MapHero> {
         child: Stack(
           children: <Widget>[
             Positioned.fill(
-              child: hasCoordinates
+              child: officeLatLng != null
                   ? GoogleMap(
                       initialCameraPosition: CameraPosition(
-                        target: LatLng(widget.office.lat!, widget.office.lng!),
+                        target: officeLatLng,
                         zoom: 14.4,
                       ),
                       onMapCreated: (GoogleMapController controller) {
@@ -381,10 +390,10 @@ class _MapHeroState extends State<_MapHero> {
                       zoomControlsEnabled: false,
                       myLocationButtonEnabled: false,
                       markers: <Marker>{
-                        if (_hasRenderableRoute && widget.originLatLng != null)
+                        if (_hasRenderableRoute && originLatLng != null)
                           Marker(
                             markerId: const MarkerId('route-origin'),
-                            position: widget.originLatLng!,
+                            position: originLatLng,
                             infoWindow: const InfoWindow(title: 'Your location'),
                             icon: BitmapDescriptor.defaultMarkerWithHue(
                               BitmapDescriptor.hueBlue,
@@ -393,7 +402,7 @@ class _MapHeroState extends State<_MapHero> {
                         if (_hasRenderableRoute)
                           Marker(
                             markerId: const MarkerId('route-destination'),
-                            position: LatLng(widget.office.lat!, widget.office.lng!),
+                            position: officeLatLng,
                             infoWindow: InfoWindow(
                               title: widget.office.constituency,
                               snippet: 'IEBC Office',
@@ -407,7 +416,7 @@ class _MapHeroState extends State<_MapHero> {
                         if (_hasRenderableRoute)
                           Polyline(
                             polylineId: const PolylineId('office-preview-route'),
-                            points: widget.routePreview!.points,
+                            points: routePreview?.points ?? <LatLng>[],
                             color: AppTheme.red,
                             width: 12,
                             geodesic: true,
@@ -535,8 +544,8 @@ class _MapHeroState extends State<_MapHero> {
                         child: Text(
                           kDebugMode &&
                                   widget.routePreviewDebugError != null &&
-                                  widget.routePreviewDebugError!.isNotEmpty
-                              ? 'Route preview unavailable. ${widget.routePreviewDebugError}'
+                                  hasDebugError
+                              ? 'Route preview unavailable. $debugError'
                               : 'Route preview unavailable. Use Open in Google Maps.',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Colors.white,
@@ -573,9 +582,10 @@ class _MapHeroState extends State<_MapHero> {
     }
 
     LatLngBounds? fitBounds = widget.routePreview?.bounds;
-    if (fitBounds == null && widget.originLatLng != null) {
+    final LatLng? originLatLng = widget.originLatLng;
+    if (fitBounds == null && originLatLng != null) {
       fitBounds = _boundsFromPoints(<LatLng>[
-        widget.originLatLng!,
+        originLatLng,
         LatLng(lat, lng),
       ]);
     }
@@ -837,7 +847,7 @@ class _RouteSummaryCard extends StatelessWidget {
                   ),
             ),
           ],
-          if (kDebugMode && routePreviewDebugError != null && routePreviewDebugError!.isNotEmpty) ...<Widget>[
+          if (kDebugMode && routePreviewDebugError != null && routePreviewDebugError.isNotEmpty) ...<Widget>[
             const SizedBox(height: 10),
             Text(
               'Developer debug: $routePreviewDebugError',
