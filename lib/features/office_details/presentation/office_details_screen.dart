@@ -29,6 +29,7 @@ class OfficeDetailsScreen extends StatefulWidget {
 class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
   RoutePreviewData? _routePreview;
   LatLng? _originLatLng;
+  double? _deviceDistanceMeters;
   String? _routePreviewDebugError;
   bool _isRouteLoading = false;
   bool _isRoutePreviewVisible = false;
@@ -77,8 +78,15 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       if (!mounted) {
         return;
       }
+      final double straightLineDistance = DistanceUtils.calculateDistanceMeters(
+        startLatitude: position.latitude,
+        startLongitude: position.longitude,
+        endLatitude: currentOffice.lat!,
+        endLongitude: currentOffice.lng!,
+      );
       setState(() {
         _originLatLng = LatLng(position.latitude, position.longitude);
+        _deviceDistanceMeters = straightLineDistance;
         _routePreview = preview;
         _routePreviewDebugError = null;
       });
@@ -169,6 +177,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 office: currentOffice,
                 routePreview: _routePreview,
                 originLatLng: _originLatLng,
+                fallbackDistanceMeters: _deviceDistanceMeters,
                 isRouteLoading: _isRouteLoading,
                 isRoutePreviewVisible: _isRoutePreviewVisible,
                 hasAttemptedRoutePreviewLoad: _hasAttemptedRoutePreviewLoad,
@@ -180,6 +189,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
                 canOpenDirections: canOpenDirections,
                 directionsService: widget.directionsService,
                 routePreview: _routePreview,
+                fallbackDistanceMeters: _deviceDistanceMeters,
                 routePreviewDebugError: _routePreviewDebugError,
                 isRouteLoading: _isRouteLoading,
                 onPreviewRouteTap: _handlePreviewRouteTap,
@@ -267,6 +277,7 @@ class _EditorialHero extends StatelessWidget {
     required this.office,
     required this.routePreview,
     required this.originLatLng,
+    required this.fallbackDistanceMeters,
     required this.isRouteLoading,
     required this.isRoutePreviewVisible,
     required this.hasAttemptedRoutePreviewLoad,
@@ -276,6 +287,7 @@ class _EditorialHero extends StatelessWidget {
   final Office office;
   final RoutePreviewData? routePreview;
   final LatLng? originLatLng;
+  final double? fallbackDistanceMeters;
   final bool isRouteLoading;
   final bool isRoutePreviewVisible;
   final bool hasAttemptedRoutePreviewLoad;
@@ -301,6 +313,7 @@ class _EditorialHero extends StatelessWidget {
           office: office,
           routePreview: routePreview,
           originLatLng: originLatLng,
+          fallbackDistanceMeters: fallbackDistanceMeters,
           isRouteLoading: isRouteLoading,
           isRoutePreviewVisible: isRoutePreviewVisible,
           hasAttemptedRoutePreviewLoad: hasAttemptedRoutePreviewLoad,
@@ -316,6 +329,7 @@ class _MapHero extends StatefulWidget {
     required this.office,
     required this.routePreview,
     required this.originLatLng,
+    required this.fallbackDistanceMeters,
     required this.isRouteLoading,
     required this.isRoutePreviewVisible,
     required this.hasAttemptedRoutePreviewLoad,
@@ -325,6 +339,7 @@ class _MapHero extends StatefulWidget {
   final Office office;
   final RoutePreviewData? routePreview;
   final LatLng? originLatLng;
+  final double? fallbackDistanceMeters;
   final bool isRouteLoading;
   final bool isRoutePreviewVisible;
   final bool hasAttemptedRoutePreviewLoad;
@@ -494,7 +509,7 @@ class _MapHeroState extends State<_MapHero> {
                     _hasRenderableRoute
                         ? 'In-app route preview on map'
                         : DistanceUtils.formatDistanceLabel(
-                            widget.office.distanceMeters,
+                            widget.office.distanceMeters ?? widget.fallbackDistanceMeters,
                             fallback: widget.office.estimatedDistanceText ?? 'Distance unavailable',
                           ),
                     style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
@@ -634,6 +649,7 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.canOpenDirections,
     required this.directionsService,
     required this.routePreview,
+    required this.fallbackDistanceMeters,
     required this.routePreviewDebugError,
     required this.isRouteLoading,
     required this.onPreviewRouteTap,
@@ -645,6 +661,7 @@ class _PrimaryActionRow extends StatelessWidget {
   final bool canOpenDirections;
   final DirectionsService directionsService;
   final RoutePreviewData? routePreview;
+  final double? fallbackDistanceMeters;
   final String? routePreviewDebugError;
   final bool isRouteLoading;
   final Future<void> Function() onPreviewRouteTap;
@@ -661,6 +678,7 @@ class _PrimaryActionRow extends StatelessWidget {
       children: <Widget>[
         _RouteSummaryCard(
           routePreview: routePreview,
+          fallbackDistanceMeters: fallbackDistanceMeters,
           routePreviewDebugError: routePreviewDebugError,
           isRouteLoading: isRouteLoading,
           isPreviewUnavailable: isPreviewUnavailable,
@@ -763,12 +781,14 @@ String routeDirectionsErrorMessage(DirectionsFailure? failure) {
 class _RouteSummaryCard extends StatelessWidget {
   const _RouteSummaryCard({
     required this.routePreview,
+    required this.fallbackDistanceMeters,
     required this.routePreviewDebugError,
     required this.isRouteLoading,
     required this.isPreviewUnavailable,
   });
 
   final RoutePreviewData? routePreview;
+  final double? fallbackDistanceMeters;
   final String? routePreviewDebugError;
   final bool isRouteLoading;
   final bool isPreviewUnavailable;
@@ -804,7 +824,7 @@ class _RouteSummaryCard extends StatelessWidget {
                 child: _RouteStatTile(
                   icon: Icons.straighten_rounded,
                   title: 'Distance',
-                  value: _distanceLabel(routePreview?.distanceMeters),
+                  value: _distanceLabel(routePreview?.distanceMeters, fallbackDistanceMeters),
                 ),
               ),
               const SizedBox(width: 10),
@@ -852,8 +872,11 @@ class _RouteSummaryCard extends StatelessWidget {
     );
   }
 
-  String _distanceLabel(int? distanceMeters) {
+  String _distanceLabel(int? distanceMeters, double? fallbackDistanceMeters) {
     if (distanceMeters == null || distanceMeters < 0) {
+      if (fallbackDistanceMeters != null && fallbackDistanceMeters >= 0) {
+        return DistanceUtils.formatDistanceLabel(fallbackDistanceMeters);
+      }
       return 'Distance unavailable';
     }
     if (distanceMeters < 1000) {

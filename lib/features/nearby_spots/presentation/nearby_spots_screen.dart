@@ -130,10 +130,10 @@ class _NearbySpotsScreenState extends State<NearbySpotsScreen> {
 
                           if (snapshot.hasError) {
                             return _InfoState(
-                              icon: Icons.error_outline_rounded,
-                              title: 'Failed to load nearby spots',
-                              subtitle: '${snapshot.error}',
-                              actionLabel: 'Retry',
+                              icon: Icons.explore_off_rounded,
+                              title: 'No ${_selectedCategory.label.toLowerCase()} found nearby',
+                              subtitle: 'Try a different category or select another office.',
+                              actionLabel: 'Refresh',
                               onActionPressed: _retry,
                             );
                           }
