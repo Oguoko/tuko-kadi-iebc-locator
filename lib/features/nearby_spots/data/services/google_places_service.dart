@@ -9,12 +9,30 @@ class GooglePlacesService {
     http.Client? client,
     String? apiKey,
   })  : _client = client ?? http.Client(),
-        _apiKey = apiKey ?? const String.fromEnvironment('GOOGLE_PLACES_API_KEY');
+        _apiKey = apiKey ?? _resolveApiKey() {
+    if (kDebugMode) {
+      debugPrint(
+        _apiKey.isEmpty
+            ? 'Google Places API key not found in dart-defines (GOOGLE_PLACES_API_KEY, GOOGLE_MAPS_API_KEY, MAPS_API_KEY).'
+            : 'Google Places API key loaded from dart-define (length: ${_apiKey.length}).',
+      );
+    }
+  }
 
   static const String _endpoint = 'https://places.googleapis.com/v1/places:searchNearby';
 
   final http.Client _client;
   final String _apiKey;
+
+  static String _resolveApiKey() {
+    return const String.fromEnvironment(
+      'GOOGLE_PLACES_API_KEY',
+      defaultValue: String.fromEnvironment(
+        'GOOGLE_MAPS_API_KEY',
+        defaultValue: String.fromEnvironment('MAPS_API_KEY'),
+      ),
+    );
+  }
 
   String? buildPhotoUrl(String? photoReference) {
     if (_apiKey.isEmpty || photoReference == null || photoReference.trim().isEmpty) {
@@ -30,9 +48,10 @@ class GooglePlacesService {
     required NearbySpotCategory category,
   }) async {
     if (_apiKey.isEmpty) {
-      throw const PlacesApiException(
-        'Google Places API key is missing. Pass --dart-define=GOOGLE_PLACES_API_KEY=your_key.',
-      );
+      if (kDebugMode) {
+        debugPrint('Google Places search skipped because API key is empty.');
+      }
+      return <NearbySpot>[];
     }
     if (!_isValidLatitude(latitude) || !_isValidLongitude(longitude)) {
       throw PlacesApiException(

@@ -1,11 +1,26 @@
 import 'dart:async';
 import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
 
-const String _mapsWebApiKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
+const String _mapsWebApiKey = String.fromEnvironment(
+  'GOOGLE_MAPS_API_KEY',
+  defaultValue: String.fromEnvironment(
+    'MAPS_API_KEY',
+    defaultValue: String.fromEnvironment('GOOGLE_PLACES_API_KEY'),
+  ),
+);
 
 Future<void> loadGoogleMapsApiForWeb() async {
   if (_mapsWebApiKey.isEmpty) {
+    if (kDebugMode) {
+      debugPrint(
+        'Google Maps JS API key is missing (checked GOOGLE_MAPS_API_KEY, MAPS_API_KEY, GOOGLE_PLACES_API_KEY).',
+      );
+    }
     return;
+  }
+  if (kDebugMode) {
+    debugPrint('Google Maps JS API key loaded from dart-define (length: ${_mapsWebApiKey.length}).');
   }
 
   final existingScript = html.document.head?.querySelector(

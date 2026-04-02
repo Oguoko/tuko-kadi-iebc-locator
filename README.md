@@ -8,6 +8,10 @@ Flutter app to help Kenyans find nearest IEBC registration offices.
 - **Google Places API (Dart HTTP calls):**
   - Uses `--dart-define=GOOGLE_PLACES_API_KEY=...`.
   - Read in `GooglePlacesService` from `String.fromEnvironment('GOOGLE_PLACES_API_KEY')`.
+  - Also supports fallback defines `GOOGLE_MAPS_API_KEY` and legacy `MAPS_API_KEY` to avoid production key-name mismatches.
+- **Google Maps JavaScript API (Flutter web map runtime):**
+  - Loaded at app startup via `loadGoogleMapsApiForWeb()`.
+  - Reads `GOOGLE_MAPS_API_KEY`, then `MAPS_API_KEY`, then `GOOGLE_PLACES_API_KEY` as fallback.
 - **Google Maps SDK for Android (Manifest meta-data):**
   - Uses Gradle placeholder `${MAPS_API_KEY}` in `AndroidManifest.xml`.
   - Value is resolved in `android/app/build.gradle.kts` from either:
@@ -37,6 +41,7 @@ For Places + Firebase overrides:
 ```bash
 flutter run \
   --dart-define=GOOGLE_PLACES_API_KEY=your-places-key \
+  --dart-define=GOOGLE_MAPS_API_KEY=your-web-maps-key \
   --dart-define=FIREBASE_WEB_API_KEY=your-web-firebase-key \
   --dart-define=FIREBASE_ANDROID_API_KEY=your-android-firebase-key
 ```
