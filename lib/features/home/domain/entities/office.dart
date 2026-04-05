@@ -53,4 +53,8 @@ class Office {
       fallback: estimatedDistanceText ?? 'Distance unavailable',
     );
   }
+
+  String get etaLabel {
+    return DistanceUtils.formatEtaLabelFromDistance(distanceMeters);
+  }
 }

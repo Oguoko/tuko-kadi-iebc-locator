@@ -1,55 +1,52 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/theme/app_theme.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
 import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
-import 'package:tuko_kadi_iebc_locator/shared/services/google_routes_service.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
+import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 
 class OfficeDetailsScreen extends StatefulWidget {
-  OfficeDetailsScreen({
+  const OfficeDetailsScreen({
     super.key,
     this.office,
     this.directionsService = const DirectionsService(),
-    GoogleRoutesService? routesService,
-  }) : routesService = routesService ?? GoogleRoutesService();
+  });
 
   final Office? office;
   final DirectionsService directionsService;
-  final GoogleRoutesService routesService;
 
   @override
   State<OfficeDetailsScreen> createState() => _OfficeDetailsScreenState();
 }
 
 class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
-  RoutePreviewData? _routePreview;
-  LatLng? _originLatLng;
-  String? _routePreviewDebugError;
-  bool _isRouteLoading = false;
-  bool _isRoutePreviewVisible = false;
-  bool _hasAttemptedRoutePreviewLoad = false;
+  double? _distanceMeters;
+  bool _isLoadingMetrics = false;
 
   @override
   void initState() {
     super.initState();
-    _loadRoutePreview();
+    _distanceMeters = widget.office?.distanceMeters;
+    _loadDistanceMetrics();
   }
 
-  Future<void> _loadRoutePreview() async {
-    final Office? currentOffice = widget.office;
-    final double? destinationLat = currentOffice?.lat;
-    final double? destinationLng = currentOffice?.lng;
-    if (currentOffice == null || destinationLat == null || destinationLng == null) {
+  Future<void> _loadDistanceMetrics() async {
+    final Office? office = widget.office;
+    if (office == null) {
+      return;
+    }
+
+    final double? officeLat = office.lat;
+    final double? officeLng = office.lng;
+    if (!OfficeCoordinateValidator.isValidOfficeCoordinate(officeLat, officeLng)) {
       return;
     }
 
     setState(() {
-      _isRouteLoading = true;
+      _isLoadingMetrics = true;
     });
 
     try {
@@ -62,86 +59,51 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         return;
       }
 
       final Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
-      final RoutePreviewData? preview = await widget.routesService.computeRoute(
-        originLat: position.latitude,
-        originLng: position.longitude,
-        destinationLat: destinationLat,
-        destinationLng: destinationLng,
+
+      if (!OfficeCoordinateValidator.hasValidWorldBounds(
+        position.latitude,
+        position.longitude,
+      )) {
+        return;
+      }
+
+      if (officeLat == null || officeLng == null) {
+        return;
+      }
+
+      final double distanceMeters = DistanceUtils.calculateDistanceMeters(
+        startLatitude: position.latitude,
+        startLongitude: position.longitude,
+        endLatitude: officeLat,
+        endLongitude: officeLng,
       );
 
       if (!mounted) {
         return;
       }
+
       setState(() {
-        _originLatLng = LatLng(position.latitude, position.longitude);
-        _routePreview = preview;
-        _routePreviewDebugError = null;
+        _distanceMeters = distanceMeters;
       });
-    } on RoutesApiException catch (error) {
-      if (kDebugMode) {
-        debugPrint('Route preview failed: ${error.message}');
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _routePreviewDebugError = error.message;
-      });
-    } catch (error, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('Unexpected route preview failure: $error');
-        debugPrintStack(stackTrace: stackTrace);
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _routePreviewDebugError = 'Unexpected route preview error: $error';
-      });
+    } catch (_) {
+      // Keep non-blocking fallback labels in UI.
     } finally {
       if (!mounted) {
         return;
       }
       setState(() {
-        _isRouteLoading = false;
-        _hasAttemptedRoutePreviewLoad = true;
+        _isLoadingMetrics = false;
       });
-    }
-  }
-
-  Future<void> _handlePreviewRouteTap() async {
-    if (_isRouteLoading) {
-      return;
-    }
-
-    if (_routePreview == null || _originLatLng == null) {
-      await _loadRoutePreview();
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    final RoutePreviewData? routePreview = _routePreview;
-    if (routePreview != null && _originLatLng != null && routePreview.points.length > 1) {
-      setState(() {
-        _isRoutePreviewVisible = true;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'In-app route preview is unavailable right now. Use Open in Google Maps below.',
-          ),
-        ),
-      );
     }
   }
 
@@ -159,6 +121,15 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       currentOffice.lng,
     );
 
+    final String distanceLabel = DistanceUtils.formatDistanceLabel(
+      _distanceMeters,
+      fallback: currentOffice.estimatedDistanceText ?? 'Distance unavailable',
+    );
+    final String etaLabel = DistanceUtils.formatEtaLabelFromDistance(
+      _distanceMeters,
+      fallback: 'ETA unavailable',
+    );
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -168,26 +139,19 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
             children: <Widget>[
               _TopHeader(office: currentOffice),
               const SizedBox(height: 18),
-              _EditorialHero(
+              _OfficeHero(
                 office: currentOffice,
-                routePreview: _routePreview,
-                originLatLng: _originLatLng,
-                isRouteLoading: _isRouteLoading,
-                isRoutePreviewVisible: _isRoutePreviewVisible,
-                hasAttemptedRoutePreviewLoad: _hasAttemptedRoutePreviewLoad,
-                routePreviewDebugError: _routePreviewDebugError,
+                distanceLabel: distanceLabel,
+                etaLabel: etaLabel,
+                isLoadingMetrics: _isLoadingMetrics,
               ),
               const SizedBox(height: 18),
               _PrimaryActionRow(
                 office: currentOffice,
                 canOpenDirections: canOpenDirections,
                 directionsService: widget.directionsService,
-                routePreview: _routePreview,
-                routePreviewDebugError: _routePreviewDebugError,
-                isRouteLoading: _isRouteLoading,
-                onPreviewRouteTap: _handlePreviewRouteTap,
-                isRoutePreviewVisible: _isRoutePreviewVisible,
-                hasAttemptedRoutePreviewLoad: _hasAttemptedRoutePreviewLoad,
+                distanceLabel: distanceLabel,
+                etaLabel: etaLabel,
               ),
               if (!canOpenDirections) ...<Widget>[
                 const SizedBox(height: 10),
@@ -265,297 +229,109 @@ class _TopHeader extends StatelessWidget {
   }
 }
 
-class _EditorialHero extends StatelessWidget {
-  const _EditorialHero({
+class _OfficeHero extends StatelessWidget {
+  const _OfficeHero({
     required this.office,
-    required this.routePreview,
-    required this.originLatLng,
-    required this.isRouteLoading,
-    required this.isRoutePreviewVisible,
-    required this.hasAttemptedRoutePreviewLoad,
-    required this.routePreviewDebugError,
+    required this.distanceLabel,
+    required this.etaLabel,
+    required this.isLoadingMetrics,
   });
 
   final Office office;
-  final RoutePreviewData? routePreview;
-  final LatLng? originLatLng;
-  final bool isRouteLoading;
-  final bool isRoutePreviewVisible;
-  final bool hasAttemptedRoutePreviewLoad;
-  final String? routePreviewDebugError;
+  final String distanceLabel;
+  final String etaLabel;
+  final bool isLoadingMetrics;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
-        color: Colors.white,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF111111), Color(0xFFE53935)],
+        ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.16),
             blurRadius: 30,
             offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: _MapHero(
-          office: office,
-          routePreview: routePreview,
-          originLatLng: originLatLng,
-          isRouteLoading: isRouteLoading,
-          isRoutePreviewVisible: isRoutePreviewVisible,
-          hasAttemptedRoutePreviewLoad: hasAttemptedRoutePreviewLoad,
-          routePreviewDebugError: routePreviewDebugError,
-        ),
-      ),
-    );
-  }
-}
-
-class _MapHero extends StatefulWidget {
-  const _MapHero({
-    required this.office,
-    required this.routePreview,
-    required this.originLatLng,
-    required this.isRouteLoading,
-    required this.isRoutePreviewVisible,
-    required this.hasAttemptedRoutePreviewLoad,
-    required this.routePreviewDebugError,
-  });
-
-  final Office office;
-  final RoutePreviewData? routePreview;
-  final LatLng? originLatLng;
-  final bool isRouteLoading;
-  final bool isRoutePreviewVisible;
-  final bool hasAttemptedRoutePreviewLoad;
-  final String? routePreviewDebugError;
-
-  @override
-  State<_MapHero> createState() => _MapHeroState();
-}
-
-class _MapHeroState extends State<_MapHero> {
-  GoogleMapController? _mapController;
-  bool _hasAppliedRouteFit = false;
-
-  bool get _hasRenderableRoute =>
-      widget.isRoutePreviewVisible && (widget.routePreview?.points.length ?? 0) > 1;
-
-  bool get _showPreviewUnavailableState =>
-      widget.hasAttemptedRoutePreviewLoad && !widget.isRouteLoading && !_hasRenderableRoute;
-
-  @override
-  void didUpdateWidget(covariant _MapHero oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final bool pointsChanged = oldWidget.routePreview?.points.length != widget.routePreview?.points.length;
-    final bool originChanged = oldWidget.originLatLng != widget.originLatLng;
-    final bool visibilityChanged = oldWidget.isRoutePreviewVisible != widget.isRoutePreviewVisible;
-    if (pointsChanged || originChanged || visibilityChanged) {
-      _hasAppliedRouteFit = false;
-      _fitRouteBoundsIfPossible();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final double? officeLat = widget.office.lat;
-    final double? officeLng = widget.office.lng;
-    final LatLng? officeLatLng = officeLat == null || officeLng == null ? null : LatLng(officeLat, officeLng);
-    final LatLng? originLatLng = widget.originLatLng;
-    final RoutePreviewData? routePreview = widget.routePreview;
-    final String debugError = widget.routePreviewDebugError ?? '';
-    final bool hasDebugError = debugError.isNotEmpty;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: SizedBox(
-        height: 328,
-        child: Stack(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Positioned.fill(
-              child: officeLatLng != null
-                  ? GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: officeLatLng,
-                        zoom: 14.4,
-                      ),
-                      onMapCreated: (GoogleMapController controller) {
-                        _mapController = controller;
-                        _fitRouteBoundsIfPossible();
-                      },
-                      mapToolbarEnabled: false,
-                      zoomControlsEnabled: false,
-                      myLocationButtonEnabled: false,
-                      markers: <Marker>{
-                        if (_hasRenderableRoute && originLatLng != null)
-                          Marker(
-                            markerId: const MarkerId('route-origin'),
-                            position: originLatLng,
-                            infoWindow: const InfoWindow(title: 'Your location'),
-                            icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueBlue,
-                            ),
-                          ),
-                        if (_hasRenderableRoute)
-                          Marker(
-                            markerId: const MarkerId('route-destination'),
-                            position: officeLatLng,
-                            infoWindow: InfoWindow(
-                              title: widget.office.constituency,
-                              snippet: 'IEBC Office',
-                            ),
-                            icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueRed,
-                            ),
-                          ),
-                      },
-                      polylines: <Polyline>{
-                        if (_hasRenderableRoute)
-                          Polyline(
-                            polylineId: const PolylineId('office-preview-route'),
-                            points: routePreview?.points ?? <LatLng>[],
-                            color: AppTheme.red,
-                            width: 12,
-                            geodesic: true,
-                            jointType: JointType.round,
-                            startCap: Cap.roundCap,
-                            endCap: Cap.roundCap,
-                          ),
-                      },
-                    )
-                  : Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: <Color>[Color(0xFF111111), Color(0xFFE53935)],
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.map_outlined, color: Colors.white, size: 46),
-                      ),
-                    ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[
-                      Colors.black.withValues(alpha: 0.15),
-                      Colors.black.withValues(alpha: 0.68),
-                    ],
-                  ),
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
               ),
-            ),
-            Positioned(
-              left: 14,
-              top: 14,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Icon(Icons.shield_rounded, color: Colors.white, size: 14),
-                    SizedBox(width: 6),
-                    Text(
-                      'Official IEBC Desk',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 14,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
+                  Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                  SizedBox(width: 6),
                   Text(
-                    widget.office.officeLocation,
-                    style: const TextStyle(
+                    'Official IEBC Desk',
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      height: 1.2,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _hasRenderableRoute
-                        ? 'In-app route preview on map'
-                        : DistanceUtils.formatDistanceLabel(
-                            widget.office.distanceMeters,
-                            fallback: widget.office.estimatedDistanceText ?? 'Distance unavailable',
-                          ),
-                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
-            if (widget.isRouteLoading)
-              const Positioned(
-                right: 14,
-                top: 14,
+            const SizedBox(height: 18),
+            Text(
+              office.officeLocation,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              office.landmark,
+              style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _MetricTile(
+                    icon: Icons.straighten_rounded,
+                    title: 'Distance',
+                    value: distanceLabel,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MetricTile(
+                    icon: Icons.schedule_rounded,
+                    title: 'ETA',
+                    value: etaLabel,
+                  ),
+                ),
+              ],
+            ),
+            if (isLoadingMetrics)
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
                 child: SizedBox(
-                  width: 22,
-                  height: 22,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.2,
                     color: Colors.white,
-                  ),
-                ),
-              ),
-            if (_showPreviewUnavailableState)
-              Positioned(
-                left: 14,
-                right: 14,
-                top: 66,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      const Icon(Icons.route_rounded, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          kDebugMode &&
-                                  widget.routePreviewDebugError != null &&
-                                  hasDebugError
-                              ? 'Route preview unavailable. $debugError'
-                              : 'Route preview unavailable. Use Open in Google Maps.',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -564,76 +340,56 @@ class _MapHeroState extends State<_MapHero> {
       ),
     );
   }
+}
 
-  Future<void> _fitRouteBoundsIfPossible() async {
-    if (_hasAppliedRouteFit) {
-      return;
-    }
-    final GoogleMapController? controller = _mapController;
-    final double? lat = widget.office.lat;
-    final double? lng = widget.office.lng;
-    if (controller == null || lat == null || lng == null) {
-      return;
-    }
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
 
-    final List<LatLng> routePoints = widget.routePreview?.points ?? <LatLng>[];
-    if (!_hasRenderableRoute) {
-      return;
-    }
+  final IconData icon;
+  final String title;
+  final String value;
 
-    LatLngBounds? fitBounds = widget.routePreview?.bounds;
-    final LatLng? originLatLng = widget.originLatLng;
-    if (fitBounds == null && originLatLng != null) {
-      fitBounds = _boundsFromPoints(<LatLng>[
-        originLatLng,
-        LatLng(lat, lng),
-      ]);
-    }
-    if (fitBounds == null && routePoints.length > 1) {
-      fitBounds = _boundsFromPoints(routePoints);
-    }
-    if (fitBounds == null) {
-      return;
-    }
-
-    _hasAppliedRouteFit = true;
-    await controller.animateCamera(
-      CameraUpdate.newLatLngBounds(
-        fitBounds,
-        58,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
       ),
-    );
-  }
-
-  LatLngBounds? _boundsFromPoints(List<LatLng> points) {
-    if (points.length < 2) {
-      return null;
-    }
-
-    double minLat = points.first.latitude;
-    double maxLat = points.first.latitude;
-    double minLng = points.first.longitude;
-    double maxLng = points.first.longitude;
-
-    for (final LatLng point in points.skip(1)) {
-      minLat = point.latitude < minLat ? point.latitude : minLat;
-      maxLat = point.latitude > maxLat ? point.latitude : maxLat;
-      minLng = point.longitude < minLng ? point.longitude : minLng;
-      maxLng = point.longitude > maxLng ? point.longitude : maxLng;
-    }
-
-    if ((maxLat - minLat).abs() < 0.00005) {
-      minLat -= 0.0015;
-      maxLat += 0.0015;
-    }
-    if ((maxLng - minLng).abs() < 0.00005) {
-      minLng -= 0.0015;
-      maxLng += 0.0015;
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -643,37 +399,54 @@ class _PrimaryActionRow extends StatelessWidget {
     required this.office,
     required this.canOpenDirections,
     required this.directionsService,
-    required this.routePreview,
-    required this.routePreviewDebugError,
-    required this.isRouteLoading,
-    required this.onPreviewRouteTap,
-    required this.isRoutePreviewVisible,
-    required this.hasAttemptedRoutePreviewLoad,
+    required this.distanceLabel,
+    required this.etaLabel,
   });
 
   final Office office;
   final bool canOpenDirections;
   final DirectionsService directionsService;
-  final RoutePreviewData? routePreview;
-  final String? routePreviewDebugError;
-  final bool isRouteLoading;
-  final Future<void> Function() onPreviewRouteTap;
-  final bool isRoutePreviewVisible;
-  final bool hasAttemptedRoutePreviewLoad;
+  final String distanceLabel;
+  final String etaLabel;
 
   @override
   Widget build(BuildContext context) {
-    final bool hasRoutePreview = routePreview != null;
-    final bool hasRenderableRoute = (routePreview?.points.length ?? 0) > 1;
-    final bool isPreviewUnavailable = hasAttemptedRoutePreviewLoad && !isRouteLoading && !hasRenderableRoute;
-
     return Column(
       children: <Widget>[
-        _RouteSummaryCard(
-          routePreview: routePreview,
-          routePreviewDebugError: routePreviewDebugError,
-          isRouteLoading: isRouteLoading,
-          isPreviewUnavailable: isPreviewUnavailable,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: _RouteStatTile(
+                  icon: Icons.straighten_rounded,
+                  title: 'Distance',
+                  value: distanceLabel,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _RouteStatTile(
+                  icon: Icons.schedule_rounded,
+                  title: 'ETA',
+                  value: etaLabel,
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 9),
         SizedBox(
@@ -682,15 +455,16 @@ class _PrimaryActionRow extends StatelessWidget {
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            onPressed: canOpenDirections ? onPreviewRouteTap : null,
+            onPressed: canOpenDirections
+                ? () {
+                    context.push(
+                      AppRoutes.routePage,
+                      extra: office,
+                    );
+                  }
+                : null,
             icon: const Icon(Icons.route_rounded),
-            label: Text(
-              hasRoutePreview && isRoutePreviewVisible && hasRenderableRoute
-                  ? 'Previewing Route In-App'
-                  : isPreviewUnavailable
-                      ? 'Route Preview Unavailable'
-                      : 'Preview Route In-App',
-            ),
+            label: const Text('Open Route In-App'),
           ),
         ),
         const SizedBox(height: 9),
@@ -710,7 +484,7 @@ class _PrimaryActionRow extends StatelessWidget {
 
                     if (!result.isSuccess && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(routeDirectionsErrorMessage(result.failure))),
+                        const SnackBar(content: Text('Unable to open Google Maps directions.')),
                       );
                     }
                   }
@@ -719,173 +493,8 @@ class _PrimaryActionRow extends StatelessWidget {
             label: const Text('Open in Google Maps'),
           ),
         ),
-        const SizedBox(height: 9),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Call Office will be enabled soon.')),
-                  );
-                },
-                icon: const Icon(Icons.call_rounded),
-                label: const Text('Call Office'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share location will be added soon.')),
-                  );
-                },
-                icon: const Icon(Icons.share_location_rounded),
-                label: const Text('Share Location'),
-              ),
-            ),
-          ],
-        ),
       ],
     );
-  }
-}
-
-String routeDirectionsErrorMessage(DirectionsFailure? failure) {
-  switch (failure) {
-    case DirectionsFailure.invalidCoordinates:
-      return 'Directions unavailable: office coordinates are missing or invalid.';
-    case DirectionsFailure.unsupportedFlow:
-      return 'In-app route preview is not available yet.';
-    case DirectionsFailure.unableToLaunch:
-    case null:
-      return 'Unable to open Google Maps directions.';
-  }
-}
-
-class _RouteSummaryCard extends StatelessWidget {
-  const _RouteSummaryCard({
-    required this.routePreview,
-    required this.routePreviewDebugError,
-    required this.isRouteLoading,
-    required this.isPreviewUnavailable,
-  });
-
-  final RoutePreviewData? routePreview;
-  final String? routePreviewDebugError;
-  final bool isRouteLoading;
-  final bool isPreviewUnavailable;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            'Route options',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _RouteStatTile(
-                  icon: Icons.straighten_rounded,
-                  title: 'Distance',
-                  value: _distanceLabel(routePreview?.distanceMeters),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _RouteStatTile(
-                  icon: Icons.schedule_rounded,
-                  title: 'ETA',
-                  value: _durationLabel(routePreview?.duration),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            routePreview == null
-                ? isPreviewUnavailable
-                    ? 'Route preview is currently unavailable. Use Open in Google Maps as fallback.'
-                    : 'Live preview is still loading. We will fall back to Google Maps if needed.'
-                : 'This map shows your in-app route preview.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          if (isRouteLoading) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              'Loading live route preview...',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-          if (kDebugMode && routePreviewDebugError != null && routePreviewDebugError.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            Text(
-              'Developer debug: $routePreviewDebugError',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.deepOrange.shade700,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _distanceLabel(int? distanceMeters) {
-    if (distanceMeters == null || distanceMeters < 0) {
-      return 'Distance unavailable';
-    }
-    if (distanceMeters < 1000) {
-      return '${distanceMeters} m';
-    }
-    final double kilometers = distanceMeters / 1000;
-    return '${kilometers.toStringAsFixed(kilometers >= 10 ? 0 : 1)} km';
-  }
-
-  String _durationLabel(Duration? duration) {
-    if (duration == null || duration.inSeconds <= 0) {
-      return 'Time unavailable';
-    }
-    if (duration.inMinutes < 60) {
-      return '${duration.inMinutes} min';
-    }
-    final int hours = duration.inHours;
-    final int minutes = duration.inMinutes.remainder(60);
-    if (minutes == 0) {
-      return '${hours}h';
-    }
-    return '${hours}h ${minutes}m';
   }
 }
 

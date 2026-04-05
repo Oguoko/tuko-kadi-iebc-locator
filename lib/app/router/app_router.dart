@@ -6,6 +6,7 @@ import 'package:tuko_kadi_iebc_locator/features/home/presentation/home_screen.da
 import 'package:tuko_kadi_iebc_locator/features/nearby_spots/presentation/nearby_spots_screen.dart';
 import 'package:tuko_kadi_iebc_locator/features/office_details/presentation/office_details_screen.dart';
 import 'package:tuko_kadi_iebc_locator/features/profile/presentation/profile_screen.dart';
+import 'package:tuko_kadi_iebc_locator/features/routing/presentation/route_page.dart';
 import 'package:tuko_kadi_iebc_locator/features/saved_favorites/presentation/saved_favorites_screen.dart';
 import 'package:tuko_kadi_iebc_locator/features/search/presentation/search_screen.dart';
 
@@ -14,6 +15,7 @@ abstract final class AppRoutes {
   static const String explore = '/explore';
   static const String officeDetails = '/office-details';
   static const String nearbySpots = '/nearby-spots';
+  static const String routePage = '/route';
   static const String search = '/search';
   static const String savedFavorites = '/saved';
   static const String profile = '/profile';
@@ -86,6 +88,27 @@ abstract final class AppRouter {
           final Office? office = extra is Office ? extra : null;
 
           return OfficeDetailsScreen(office: office);
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.routePage,
+        name: 'route-page',
+        builder: (BuildContext context, GoRouterState state) {
+          final Object? extra = state.extra;
+          final Office? office = extra is Office ? extra : null;
+
+          if (office == null) {
+            return const Scaffold(
+              body: SafeArea(
+                child: Center(
+                  child: Text('No office selected for route.'),
+                ),
+              ),
+            );
+          }
+
+          return RoutePage(office: office);
         },
       ),
       GoRoute(
