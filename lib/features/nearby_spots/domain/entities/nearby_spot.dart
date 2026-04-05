@@ -20,39 +20,29 @@ class NearbySpot {
   final List<NearbySpotPhoto> photos;
 
   String? get firstPhotoName {
-    if (photos.isEmpty) {
-      return null;
-    }
-
+    if (photos.isEmpty) return null;
     return photos.first.name;
   }
 
   String get ratingLabel {
-    final double? currentRating = rating;
-    if (currentRating == null) {
-      return 'No ratings yet';
-    }
-
-    return currentRating.toStringAsFixed(1);
+    if (rating == null) return 'No ratings yet';
+    return rating!.toStringAsFixed(1);
   }
 
   String get distanceLabel {
-    final double? meters = distanceMeters;
-    if (meters == null) {
-      return 'Distance unavailable';
+    if (distanceMeters == null) return 'Distance unavailable';
+
+    if (distanceMeters! < 1000) {
+      return '${distanceMeters!.round()} m away';
     }
 
-    if (meters < 1000) {
-      return '${meters.round()} m away';
-    }
-
-    final double kilometers = meters / 1000;
-    return '${kilometers.toStringAsFixed(1)} km away';
+    final km = distanceMeters! / 1000;
+    return '${km.toStringAsFixed(1)} km away';
   }
 
   factory NearbySpot.fromPlacesJson(Map<String, dynamic> json) {
-    final Map<String, dynamic>? displayName = _asStringMap(json['displayName']);
-    final Map<String, dynamic>? location = _asStringMap(json['location']);
+    final displayName = _asMap(json['displayName']);
+    final location = _asMap(json['location']);
 
     return NearbySpot(
       id: _asString(json['id']),
@@ -66,20 +56,15 @@ class NearbySpot {
     );
   }
 
-  static String _resolvePrimaryType(
-    Object? primaryType,
-    Object? types,
-  ) {
-    final String primary = _asString(primaryType);
-    if (primary.isNotEmpty) {
-      return primary;
-    }
+  static String _resolvePrimaryType(Object? primaryType, Object? types) {
+    final primary = _asString(primaryType);
+    if (primary.isNotEmpty) return primary;
 
-    if (types is List<Object?>) {
-      for (final Object? value in types) {
-        final String type = _asString(value);
-        if (type.isNotEmpty) {
-          return type.replaceAll('_', ' ');
+    if (types is List) {
+      for (final t in types) {
+        final value = _asString(t);
+        if (value.isNotEmpty) {
+          return value.replaceAll('_', ' ');
         }
       }
     }
@@ -88,27 +73,15 @@ class NearbySpot {
   }
 
   static String _asString(Object? value) {
-    if (value is String) {
-      return value;
-    }
-
-    return '';
+    return value is String ? value : '';
   }
 
-  static Map<String, dynamic>? _asStringMap(Object? value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-
-    return null;
+  static Map<String, dynamic>? _asMap(Object? value) {
+    return value is Map<String, dynamic> ? value : null;
   }
 
   static double? _asDouble(Object? value) {
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    return null;
+    return value is num ? value.toDouble() : null;
   }
 }
 
@@ -132,34 +105,22 @@ class NearbySpotPhoto {
   }
 
   static List<NearbySpotPhoto> listFromJson(Object? photos) {
-    if (photos is! List<Object?>) {
-      return const <NearbySpotPhoto>[];
-    }
+    if (photos is! List) return const [];
 
     return photos
         .whereType<Map<String, dynamic>>()
         .map(NearbySpotPhoto.fromJson)
-        .where((NearbySpotPhoto photo) => photo.name.trim().isNotEmpty)
-        .toList(growable: false);
+        .where((p) => p.name.trim().isNotEmpty)
+        .toList();
   }
 
   static String _asString(Object? value) {
-    if (value is String) {
-      return value;
-    }
-
-    return '';
+    return value is String ? value : '';
   }
 
   static int? _asInt(Object? value) {
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
+    if (value is int) return value;
+    if (value is num) return value.toInt();
     return null;
   }
 }
@@ -167,15 +128,15 @@ class NearbySpotPhoto {
 enum NearbySpotCategory {
   eateries(
     label: 'Eateries',
-    includedTypes: <String>['restaurant'],
+    includedTypes: ['restaurant'],
   ),
   cafes(
     label: 'Cafés',
-    includedTypes: <String>['cafe'],
+    includedTypes: ['cafe'],
   ),
   chillSpots(
     label: 'Chill Spots',
-    includedTypes: <String>['tourist_attraction', 'park', 'shopping_mall'],
+    includedTypes: ['tourist_attraction', 'park', 'shopping_mall'],
   );
 
   const NearbySpotCategory({

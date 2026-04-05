@@ -1,0 +1,74 @@
+lib/config/google_maps_web_loader_web.dart:    if (!completer.isCompleted) {
+lib/config/google_maps_web_loader_web.dart:    if (!completer.isCompleted) {
+lib/app/app.dart:                          if (!mounted) {
+lib/app/app.dart:                                                                                                                                                                            ignoring: !_showSplash,
+lib/shared/widgets/placeholder_screen.dart:              child!,
+lib/shared/services/directions_service.dart:    if (!hasValidDestination(lat, lng)) {
+lib/shared/services/directions_service.dart:          lat: lat!,
+lib/shared/services/directions_service.dart:          lng: lng!,
+lib/shared/services/google_routes_service.dart:    if (decoded is! Map<String, dynamic>) {
+lib/shared/services/google_routes_service.dart:    if (routes is! List || routes.isEmpty) {
+lib/shared/services/google_routes_service.dart:    if (first is! Map<String, dynamic>) {
+lib/shared/services/google_routes_service.dart:    if (polyline is! Map<String, dynamic>) {
+lib/shared/services/google_routes_service.dart:    if (encodedPolyline is! String || encodedPolyline.isEmpty) {
+lib/shared/services/google_routes_service.dart:    if (raw == null || !raw.endsWith('s')) return null;
+lib/shared/services/google_routes_service.dart:    if (raw is! Map<String, dynamic>) return null;
+lib/shared/services/google_routes_service.dart:    if (raw is! Map<String, dynamic>) return null;
+lib/shared/services/google_routes_service.dart:    if (!originLat.isFinite ||
+lib/shared/services/google_routes_service.dart:        !originLng.isFinite ||
+lib/shared/services/google_routes_service.dart:        !destinationLat.isFinite ||
+lib/shared/services/google_routes_service.dart:        !destinationLng.isFinite) {
+lib/shared/utils/office_coordinate_validator.dart:    if (!lat.isFinite || !lng.isFinite) {
+lib/shared/utils/office_coordinate_validator.dart:    if (!hasValidWorldBounds(lat, lng) || lat == null || lng == null) {
+lib/features/office_details/presentation/office_details_screen.dart:      if (!serviceEnabled) {
+lib/features/office_details/presentation/office_details_screen.dart:        destinationLat: currentOffice.lat!,
+lib/features/office_details/presentation/office_details_screen.dart:        destinationLng: currentOffice.lng!,
+lib/features/office_details/presentation/office_details_screen.dart:      if (!mounted) {
+lib/features/office_details/presentation/office_details_screen.dart:        endLatitude: currentOffice.lat!,
+lib/features/office_details/presentation/office_details_screen.dart:        endLongitude: currentOffice.lng!,
+lib/features/office_details/presentation/office_details_screen.dart:      if (!mounted) {
+lib/features/office_details/presentation/office_details_screen.dart:      if (!mounted) {
+lib/features/office_details/presentation/office_details_screen.dart:      if (!mounted) {
+lib/features/office_details/presentation/office_details_screen.dart:    if (!mounted) {
+lib/features/office_details/presentation/office_details_screen.dart:              if (!canOpenDirections) ...<Widget>[
+lib/features/office_details/presentation/office_details_screen.dart:      widget.hasAttemptedRoutePreviewLoad && !widget.isRouteLoading && !_hasRenderableRoute;
+lib/features/office_details/presentation/office_details_screen.dart:                        target: LatLng(widget.office.lat!, widget.office.lng!),
+lib/features/office_details/presentation/office_details_screen.dart:                            position: widget.originLatLng!,
+lib/features/office_details/presentation/office_details_screen.dart:                            position: LatLng(widget.office.lat!, widget.office.lng!),
+lib/features/office_details/presentation/office_details_screen.dart:                            points: widget.routePreview!.points,
+lib/features/office_details/presentation/office_details_screen.dart:                                  widget.routePreviewDebugError!.isNotEmpty
+lib/features/office_details/presentation/office_details_screen.dart:    if (!_hasRenderableRoute) {
+lib/features/office_details/presentation/office_details_screen.dart:        widget.originLatLng!,
+lib/features/office_details/presentation/office_details_screen.dart:    final bool isPreviewUnavailable = hasAttemptedRoutePreviewLoad && !isRouteLoading && !hasRenderableRoute;
+lib/features/office_details/presentation/office_details_screen.dart:                    if (!result.isSuccess && context.mounted) {
+lib/features/home/presentation/widgets/office_preview_card.dart:                              if (!result.isSuccess && context.mounted) {
+lib/features/home/presentation/widgets/home_search_bar.dart:                                : () => onSuggestionTap!(suggestion),
+lib/features/home/presentation/home_screen.dart:  bool get _supportsMyLocationLayer => !kIsWeb;
+lib/features/home/presentation/home_screen.dart:      if (!serviceEnabled) {
+lib/features/home/presentation/home_screen.dart:        if (!mounted) {
+lib/features/home/presentation/home_screen.dart:        if (!mounted) {
+lib/features/home/presentation/home_screen.dart:        if (!mounted) {
+lib/features/home/presentation/home_screen.dart:      if (!mounted) {
+lib/features/home/presentation/home_screen.dart:      if (!hasValidCoordinates) {
+lib/features/home/presentation/home_screen.dart:      if (!mounted) {
+lib/features/home/presentation/home_screen.dart:    if (!kIsWeb) {
+lib/features/home/presentation/home_screen.dart:    if (!mounted || !_isControllerReady) {
+lib/features/home/presentation/home_screen.dart:    if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
+lib/features/home/presentation/home_screen.dart:                if (!mounted) {
+lib/features/home/presentation/home_screen.dart:      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
+lib/features/home/presentation/home_screen.dart:        if (!normalized.contains(query)) {
+lib/features/home/presentation/home_screen.dart:      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng)) {
+lib/features/home/presentation/home_screen.dart:    if (!kDebugMode || _invalidMarkerLogIds.contains(office.id)) {
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:      latitude: office.lat!,
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:      longitude: office.lng!,
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:                child: !hasCoordinates
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:                                  if (!result.isSuccess && context.mounted) {
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:                            : '${office!.constituency} • ${office!.county}',
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:                            imageUrl!,
+lib/features/nearby_spots/presentation/nearby_spots_screen.dart:                child: Text(actionLabel!),
+lib/features/nearby_spots/domain/entities/nearby_spot.dart:    if (photos is! List<Object?>) {
+lib/features/nearby_spots/data/services/google_places_service.dart:    if (!_isValidLatitude(latitude) || !_isValidLongitude(longitude)) {
+lib/features/nearby_spots/data/services/google_places_service.dart:    if (decoded is! Map<String, dynamic>) {
+lib/features/nearby_spots/data/services/google_places_service.dart:    if (places is! List<Object?>) {
+lib/features/search/presentation/search_screen.dart:                    if (!_recentSearches.contains(office.constituency)) {
+lib/features/saved_favorites/presentation/saved_favorites_screen.dart:                child: Text(badge!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),

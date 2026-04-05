@@ -105,13 +105,27 @@ class _RecentCard extends StatelessWidget {
                 height: 85,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  gradient: const LinearGradient(colors: <Color>[Color(0xFFE53935), Color(0xFF1C1C1C)]),
+                  gradient: const LinearGradient(
+                    colors: <Color>[Color(0xFFE53935), Color(0xFF1C1C1C)],
+                  ),
                 ),
-                child: const Center(child: Icon(Icons.history_rounded, color: Colors.white)),
+                child: const Center(
+                  child: Icon(Icons.history_rounded, color: Colors.white),
+                ),
               ),
               const SizedBox(height: 10),
-              Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ],
           ),
         ),
@@ -147,15 +161,27 @@ class _SavedItemCard extends StatelessWidget {
         ),
         title: Row(
           children: <Widget>[
-            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800))),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
             if (badge != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(badge!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                child: Text(
+                  badge ?? '',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
           ],
         ),

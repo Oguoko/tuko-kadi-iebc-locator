@@ -1,9 +1,5 @@
 import 'package:tuko_kadi_iebc_locator/shared/utils/google_maps_directions.dart';
 
-/// The current direction flow used by the app.
-///
-/// [externalGoogleMaps] is the MVP default and should remain stable.
-/// [inAppPreview] is reserved for a future in-app route preview experience.
 enum DirectionsFlow {
   externalGoogleMaps,
   inAppPreview,
@@ -21,7 +17,7 @@ class DirectionsResult {
   const DirectionsResult.success() : this._();
 
   const DirectionsResult.failure(DirectionsFailure failure)
-    : this._(failure: failure);
+      : this._(failure: failure);
 
   final DirectionsFailure? failure;
 
@@ -29,7 +25,9 @@ class DirectionsResult {
 }
 
 class DirectionsService {
-  const DirectionsService({this.defaultFlow = DirectionsFlow.externalGoogleMaps});
+  const DirectionsService({
+    this.defaultFlow = DirectionsFlow.externalGoogleMaps,
+  });
 
   final DirectionsFlow defaultFlow;
 
@@ -43,21 +41,35 @@ class DirectionsService {
     DirectionsFlow? flow,
   }) async {
     if (!hasValidDestination(lat, lng)) {
-      return const DirectionsResult.failure(DirectionsFailure.invalidCoordinates);
+      return const DirectionsResult.failure(
+        DirectionsFailure.invalidCoordinates,
+      );
+    }
+
+    if (lat == null || lng == null) {
+      return const DirectionsResult.failure(
+        DirectionsFailure.invalidCoordinates,
+      );
     }
 
     switch (flow ?? defaultFlow) {
       case DirectionsFlow.externalGoogleMaps:
-        final bool launched = await GoogleMapsDirections.openDirections(
-          lat: lat!,
-          lng: lng!,
+        final bool launched =
+            await GoogleMapsDirections.openDirections(
+          lat: lat,
+          lng: lng,
         );
+
         return launched
             ? const DirectionsResult.success()
-            : const DirectionsResult.failure(DirectionsFailure.unableToLaunch);
+            : const DirectionsResult.failure(
+                DirectionsFailure.unableToLaunch,
+              );
+
       case DirectionsFlow.inAppPreview:
-        // Future extension point: render route preview inside app.
-        return const DirectionsResult.failure(DirectionsFailure.unsupportedFlow);
+        return const DirectionsResult.failure(
+          DirectionsFailure.unsupportedFlow,
+        );
     }
   }
 }
