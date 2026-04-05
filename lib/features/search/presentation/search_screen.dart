@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/application/offices_provider.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
+import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
+import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -16,11 +19,84 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<String> _recentSearches = <String>['Lang’ata', 'Westlands', 'Mombasa'];
   final List<String> _suggestions = <String>['Kibra', 'Nakuru Town', 'Kisumu Central', 'Eldoret East'];
+  Position? _userPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveUserPosition();
+  }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _resolveUserPosition() async {
+    try {
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+
+      if (!OfficeCoordinateValidator.hasValidWorldBounds(
+        position.latitude,
+        position.longitude,
+      )) {
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _userPosition = position;
+      });
+    } catch (_) {
+      // Silent fallback to unavailable distance/eta labels.
+    }
+  }
+
+  List<Office> _enrichResultsWithDistance(List<Office> offices) {
+    final Position? position = _userPosition;
+    if (position == null) {
+      return offices;
+    }
+
+    return offices.map((Office office) {
+      final double? lat = office.lat;
+      final double? lng = office.lng;
+      if (!OfficeCoordinateValidator.isValidOfficeCoordinate(lat, lng) ||
+          lat == null ||
+          lng == null) {
+        return office;
+      }
+
+      final double distanceMeters = DistanceUtils.calculateDistanceMeters(
+        startLatitude: position.latitude,
+        startLongitude: position.longitude,
+        endLatitude: lat,
+        endLongitude: lng,
+      );
+
+      return office.copyWith(distanceMeters: distanceMeters);
+    }).toList(growable: false);
   }
 
   @override
@@ -30,13 +106,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           orElse: () => <Office>[],
         );
     final String query = _controller.text.trim().toLowerCase();
-    final List<Office> results = query.isEmpty
+    final List<Office> filtered = query.isEmpty
         ? offices.take(8).toList(growable: false)
         : offices
             .where(
               (Office office) => office.constituency.toLowerCase().contains(query) || office.county.toLowerCase().contains(query) || office.officeLocation.toLowerCase().contains(query),
             )
             .toList(growable: false);
+    final List<Office> results = _enrichResultsWithDistance(filtered);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Search IEBC Offices')),
@@ -131,7 +208,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   leading: const CircleAvatar(child: Icon(Icons.location_on_rounded)),
                   title: Text(office.constituency, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  subtitle: Text('${office.county} • ${office.officeLocation}'),
+                  subtitle: Text(
+                    '${office.county} • ${office.officeLocation}\n${office.distanceLabel} • ${office.etaLabel}',
+                  ),
+                  isThreeLine: true,
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () {
                     if (!_recentSearches.contains(office.constituency)) {

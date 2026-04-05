@@ -97,20 +97,32 @@ class OfficePreviewCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: colors.secondary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                    child: Text(
-                      office.distanceLabel,
-                      style: TextStyle(
-                        color: colors.onSecondary,
-                        fontWeight: FontWeight.w800,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Container(
+                        decoration: BoxDecoration(
+                          color: colors.secondary,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                        child: Text(
+                          office.distanceLabel,
+                          style: TextStyle(
+                            color: colors.onSecondary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 5),
+                      Text(
+                        office.etaLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ],
                   ),
                 ],
               ),
