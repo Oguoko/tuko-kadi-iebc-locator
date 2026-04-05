@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/theme/app_theme.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
-import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
+import 'package:tuko_kadi_iebc_locator/features/routing/presentation/route_page.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 
@@ -12,11 +12,9 @@ class OfficeDetailsScreen extends StatefulWidget {
   const OfficeDetailsScreen({
     super.key,
     this.office,
-    this.directionsService = const DirectionsService(),
   });
 
   final Office? office;
-  final DirectionsService directionsService;
 
   @override
   State<OfficeDetailsScreen> createState() => _OfficeDetailsScreenState();
@@ -81,12 +79,16 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
         return;
       }
 
-      final double distanceMeters = DistanceUtils.calculateDistanceMeters(
-        startLatitude: position.latitude,
-        startLongitude: position.longitude,
-        endLatitude: officeLat,
-        endLongitude: officeLng,
+      final double? distanceMeters = DistanceUtils.calculateDistanceMeters(
+        position.latitude,
+        position.longitude,
+        officeLat,
+        officeLng,
       );
+
+      if (distanceMeters == null) {
+        return;
+      }
 
       if (!mounted) {
         return;
@@ -116,18 +118,18 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
       );
     }
 
-    final bool canOpenDirections = widget.directionsService.hasValidDestination(
+    final bool canOpenDirections = OfficeCoordinateValidator.isValidOfficeCoordinate(
       currentOffice.lat,
       currentOffice.lng,
     );
 
     final String distanceLabel = DistanceUtils.formatDistanceLabel(
       _distanceMeters,
-      fallback: currentOffice.estimatedDistanceText ?? 'Distance unavailable',
+      fallback: currentOffice.estimatedDistanceText ?? 'Location unavailable',
     );
     final String etaLabel = DistanceUtils.formatEtaLabelFromDistance(
       _distanceMeters,
-      fallback: 'ETA unavailable',
+      fallback: 'ETA not available',
     );
 
     return Scaffold(
@@ -149,19 +151,7 @@ class _OfficeDetailsScreenState extends State<OfficeDetailsScreen> {
               _PrimaryActionRow(
                 office: currentOffice,
                 canOpenDirections: canOpenDirections,
-                directionsService: widget.directionsService,
-                distanceLabel: distanceLabel,
-                etaLabel: etaLabel,
               ),
-              if (!canOpenDirections) ...<Widget>[
-                const SizedBox(height: 10),
-                Text(
-                  'Directions unavailable: office coordinates are missing or invalid.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
               const SizedBox(height: 24),
               const _FaqSection(),
               const SizedBox(height: 24),
@@ -398,102 +388,32 @@ class _PrimaryActionRow extends StatelessWidget {
   const _PrimaryActionRow({
     required this.office,
     required this.canOpenDirections,
-    required this.directionsService,
-    required this.distanceLabel,
-    required this.etaLabel,
   });
 
   final Office office;
   final bool canOpenDirections;
-  final DirectionsService directionsService;
-  final String distanceLabel;
-  final String etaLabel;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: _RouteStatTile(
-                  icon: Icons.straighten_rounded,
-                  title: 'Distance',
-                  value: distanceLabel,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _RouteStatTile(
-                  icon: Icons.schedule_rounded,
-                  title: 'ETA',
-                  value: etaLabel,
-                ),
-              ),
-            ],
-          ),
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
         ),
-        const SizedBox(height: 9),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: canOpenDirections
-                ? () {
-                    context.push(
-                      AppRoutes.routePage,
-                      extra: office,
-                    );
-                  }
-                : null,
-            icon: const Icon(Icons.route_rounded),
-            label: const Text('Open Route In-App'),
-          ),
-        ),
-        const SizedBox(height: 9),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            onPressed: canOpenDirections
-                ? () async {
-                    final DirectionsResult result = await directionsService.openDirections(
-                      lat: office.lat,
-                      lng: office.lng,
-                      flow: DirectionsFlow.externalGoogleMaps,
-                    );
-
-                    if (!result.isSuccess && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Unable to open Google Maps directions.')),
-                      );
-                    }
-                  }
-                : null,
-            icon: const Icon(Icons.open_in_new_rounded),
-            label: const Text('Open in Google Maps'),
-          ),
-        ),
-      ],
+        onPressed: canOpenDirections
+            ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<RoutePage>(
+                    builder: (BuildContext context) => RoutePage(office: office),
+                  ),
+                );
+              }
+            : null,
+        icon: const Icon(Icons.directions_rounded),
+        label: const Text('Directions'),
+      ),
     );
   }
 }

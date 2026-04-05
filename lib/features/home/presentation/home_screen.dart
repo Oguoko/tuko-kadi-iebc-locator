@@ -623,11 +623,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return office;
       }
 
-      final double distance = DistanceUtils.calculateDistanceMeters(
-        startLatitude: userLocation.latitude,
-        startLongitude: userLocation.longitude,
-        endLatitude: lat,
-        endLongitude: lng,
+      final double? distance = DistanceUtils.calculateDistanceMeters(
+        userLocation.latitude,
+        userLocation.longitude,
+        lat,
+        lng,
       );
 
       return office.copyWith(distanceMeters: distance);
