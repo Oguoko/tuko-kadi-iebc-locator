@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tuko_kadi_iebc_locator/app/router/app_router.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
-import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
+import 'package:tuko_kadi_iebc_locator/features/routing/presentation/route_page.dart';
 
 class OfficePreviewCard extends StatelessWidget {
   const OfficePreviewCard({
@@ -10,21 +10,16 @@ class OfficePreviewCard extends StatelessWidget {
     required this.office,
     this.isSelected = false,
     this.onTap,
-    this.directionsService = const DirectionsService(),
   });
 
   final Office office;
   final bool isSelected;
   final VoidCallback? onTap;
-  final DirectionsService directionsService;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final bool canOpenDirections = directionsService.hasValidDestination(
-      office.lat,
-      office.lng,
-    );
+    final bool canOpenDirections = office.lat != null && office.lng != null;
 
     final Color cardColor = isSelected ? colors.primaryContainer : colors.surface;
     final Color borderColor = isSelected ? colors.primary : colors.outlineVariant;
@@ -74,10 +69,7 @@ class OfficePreviewCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 office.constituency,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: -0.2,
                                     ),
@@ -150,9 +142,11 @@ class OfficePreviewCard extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: canOpenDirections
                           ? () {
-                              context.push(
-                                AppRoutes.officeDetails,
-                                extra: office,
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute<RoutePage>(
+                                  builder: (BuildContext context) => RoutePage(office: office),
+                                ),
                               );
                             }
                           : null,
@@ -161,39 +155,6 @@ class OfficePreviewCard extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Tooltip(
-                    message: 'Open in Google Maps',
-                    child: OutlinedButton(
-                      onPressed: canOpenDirections
-                          ? () async {
-                              final DirectionsResult result =
-                                  await directionsService.openDirections(
-                                lat: office.lat,
-                                lng: office.lng,
-                                flow: DirectionsFlow.externalGoogleMaps,
-                              );
-
-                              if (!result.isSuccess && context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      _directionsErrorMessage(result.failure),
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          : null,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: const Icon(Icons.open_in_new_rounded, size: 18),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -227,17 +188,5 @@ class OfficePreviewCard extends StatelessWidget {
         child: cardContent,
       ),
     );
-  }
-
-  String _directionsErrorMessage(DirectionsFailure? failure) {
-    switch (failure) {
-      case DirectionsFailure.invalidCoordinates:
-        return 'Directions unavailable: office coordinates are missing or invalid.';
-      case DirectionsFailure.unsupportedFlow:
-        return 'In-app route preview is not available yet.';
-      case DirectionsFailure.unableToLaunch:
-      case null:
-        return 'Unable to open Google Maps directions.';
-    }
   }
 }
