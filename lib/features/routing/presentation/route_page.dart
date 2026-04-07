@@ -1,21 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:tuko_kadi_iebc_locator/features/home/domain/entities/office.dart';
 import 'package:tuko_kadi_iebc_locator/shared/services/directions_service.dart';
+import 'package:tuko_kadi_iebc_locator/shared/services/google_routes_service.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/distance_utils.dart';
 import 'package:tuko_kadi_iebc_locator/shared/utils/office_coordinate_validator.dart';
 
 class RoutePage extends StatefulWidget {
-  const RoutePage({
+  RoutePage({
     super.key,
     required this.office,
     this.directionsService = const DirectionsService(),
-  });
+    GoogleRoutesService? routesService,
+  }) : routesService = routesService ?? GoogleRoutesService();
 
   final Office office;
   final DirectionsService directionsService;
+  final GoogleRoutesService routesService;
 
   @override
   State<RoutePage> createState() => _RoutePageState();
@@ -31,6 +35,7 @@ class _RoutePageState extends State<RoutePage> {
   LatLng? _userLocation;
   LatLng? _officeLocation;
   bool _isLoading = true;
+  Set<Polyline> _polylines = <Polyline>{};
 
   @override
   void initState() {
@@ -79,7 +84,78 @@ class _RoutePageState extends State<RoutePage> {
       _isLoading = false;
     });
 
+    await _loadRoutePolyline();
     _fitBounds();
+  }
+
+  Future<void> _loadRoutePolyline() async {
+    final LatLng? userLocation = _userLocation;
+    final LatLng? officeLocation = _officeLocation;
+
+    if (userLocation == null || officeLocation == null) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _polylines = <Polyline>{};
+      });
+      return;
+    }
+
+    try {
+      final RoutePreviewData? routeData = await widget.routesService.computeRoute(
+        originLat: userLocation.latitude,
+        originLng: userLocation.longitude,
+        destinationLat: officeLocation.latitude,
+        destinationLng: officeLocation.longitude,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final String? encodedPolyline = routeData?.encodedPolyline;
+      if (encodedPolyline == null || encodedPolyline.isEmpty) {
+        setState(() {
+          _polylines = <Polyline>{};
+        });
+        return;
+      }
+
+      _drawPolyline(encodedPolyline);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _polylines = <Polyline>{};
+      });
+    }
+  }
+
+  void _drawPolyline(String encodedPolyline) {
+    final PolylinePoints polylinePoints = PolylinePoints();
+
+    final List<PointLatLng> result = polylinePoints.decodePolyline(encodedPolyline);
+
+    final List<LatLng> points = result
+        .map((PointLatLng point) => LatLng(point.latitude, point.longitude))
+        .toList();
+
+    setState(() {
+      _polylines.clear();
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('route'),
+          color: Colors.redAccent,
+          width: 6,
+          jointType: JointType.round,
+          startCap: Cap.roundCap,
+          endCap: Cap.roundCap,
+          points: points,
+        ),
+      );
+    });
   }
 
   Future<Position?> _resolveUserPosition() async {
@@ -234,6 +310,7 @@ class _RoutePageState extends State<RoutePage> {
               myLocationButtonEnabled: false,
               mapToolbarEnabled: false,
               markers: _markers(),
+              polylines: _polylines,
             ),
           ),
           if (_isLoading)
