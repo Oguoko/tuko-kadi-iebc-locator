@@ -9,12 +9,14 @@ class RoutePreviewData {
     required this.points,
     required this.distanceMeters,
     required this.duration,
+    required this.encodedPolyline,
     this.bounds,
   });
 
   final List<LatLng> points;
   final int? distanceMeters;
   final Duration? duration;
+  final String encodedPolyline;
   final LatLngBounds? bounds;
 }
 
@@ -134,6 +136,7 @@ class GoogleRoutesService {
       points: _decodePolyline(encodedPolyline),
       distanceMeters: _asInt(firstRoute['distanceMeters']),
       duration: _parseDuration(firstRoute['duration'] as String?),
+      encodedPolyline: encodedPolyline,
       bounds: _parseBounds(firstRoute['viewport']),
     );
   }
