@@ -242,7 +242,7 @@ class _SpotsHero extends StatelessWidget {
                       Text(
                         office == null
                             ? 'Select an office to explore places nearby.'
-                            : '${office.constituency} • ${office.county}',
+                            : '${office?.constituency ?? ''} • ${office?.county ?? ''}',
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],

@@ -89,11 +89,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       }
 
       final double distanceMeters = DistanceUtils.calculateDistanceMeters(
-        startLatitude: position.latitude,
-        startLongitude: position.longitude,
-        endLatitude: lat,
-        endLongitude: lng,
-      );
+  position.latitude,
+  position.longitude,
+  lat,
+  lng,
+) ?? 0;
 
       return office.copyWith(distanceMeters: distanceMeters);
     }).toList(growable: false);
